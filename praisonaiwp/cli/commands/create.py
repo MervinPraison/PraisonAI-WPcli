@@ -1,0 +1,206 @@
+"""Create command - Create WordPress posts"""
+
+import click
+import json
+import yaml
+import csv
+from pathlib import Path
+from praisonaiwp.core.config import Config
+from praisonaiwp.core.ssh_manager import SSHManager
+from praisonaiwp.core.wp_client import WPClient
+from praisonaiwp.utils.logger import get_logger
+from rich.console import Console
+from rich.progress import Progress, SpinnerColumn, TextColumn
+
+console = Console()
+logger = get_logger(__name__)
+
+
+@click.command()
+@click.argument('title_or_file', required=False)
+@click.option('--content', help='Post content')
+@click.option('--status', default='publish', help='Post status (publish, draft, private)')
+@click.option('--type', 'post_type', default='post', help='Post type (post, page)')
+@click.option('--server', default=None, help='Server name from config')
+def create_command(title_or_file, content, status, post_type, server):
+    """
+    Create WordPress posts
+    
+    Examples:
+    
+        # Interactive mode
+        praisonaiwp create
+        
+        # Single post
+        praisonaiwp create "My Post" --content "Hello World"
+        
+        # From file (auto-detects format)
+        praisonaiwp create posts.json
+        
+        # Create page
+        praisonaiwp create "About Us" --content "..." --type page
+    """
+    
+    try:
+        # Load configuration
+        config = Config()
+        server_config = config.get_server(server)
+        
+        # Determine operation mode
+        if not title_or_file:
+            # Interactive mode
+            title_or_file = click.prompt("Post title")
+            if not content:
+                content = click.prompt("Post content")
+        
+        # Check if it's a file
+        if title_or_file and Path(title_or_file).exists():
+            # Bulk create from file
+            _create_from_file(title_or_file, server_config, config)
+        else:
+            # Single post create
+            _create_single_post(
+                title_or_file,
+                content,
+                status,
+                post_type,
+                server_config
+            )
+    
+    except Exception as e:
+        console.print(f"[red]Error: {e}[/red]")
+        logger.error(f"Create command failed: {e}")
+        raise click.Abort()
+
+
+def _create_single_post(title, content, status, post_type, server_config):
+    """Create a single post"""
+    
+    if not content:
+        console.print("[red]Error: --content is required[/red]")
+        raise click.Abort()
+    
+    console.print(f"\n[yellow]Creating {post_type}...[/yellow]")
+    
+    with SSHManager(
+        server_config['hostname'],
+        server_config['username'],
+        server_config['key_file'],
+        server_config.get('port', 22)
+    ) as ssh:
+        
+        wp = WPClient(
+            ssh,
+            server_config['wp_path'],
+            server_config.get('php_bin', 'php'),
+            server_config.get('wp_cli', '/usr/local/bin/wp')
+        )
+        
+        post_id = wp.create_post(
+            post_title=title,
+            post_content=content,
+            post_status=status,
+            post_type=post_type
+        )
+        
+        console.print(f"[green]✓ Created {post_type} ID: {post_id}[/green]")
+        console.print(f"Title: {title}")
+        console.print(f"Status: {status}\n")
+
+
+def _create_from_file(file_path, server_config, config):
+    """Create posts from file"""
+    
+    # Detect file format and parse
+    posts = _parse_file(file_path)
+    
+    if not posts:
+        console.print("[red]Error: No posts found in file[/red]")
+        return
+    
+    console.print(f"\n[cyan]Found {len(posts)} posts in file[/cyan]")
+    
+    # Check if should use parallel mode
+    parallel_threshold = config.get_setting('parallel_threshold', 10)
+    use_parallel = len(posts) > parallel_threshold
+    
+    if use_parallel:
+        console.print(f"[yellow]Using parallel mode for faster creation...[/yellow]")
+        # TODO: Implement parallel execution via Node.js
+        console.print("[yellow]Note: Parallel mode not yet implemented, using sequential[/yellow]")
+    
+    # Create posts sequentially
+    with SSHManager(
+        server_config['hostname'],
+        server_config['username'],
+        server_config['key_file'],
+        server_config.get('port', 22)
+    ) as ssh:
+        
+        wp = WPClient(
+            ssh,
+            server_config['wp_path'],
+            server_config.get('php_bin', 'php'),
+            server_config.get('wp_cli', '/usr/local/bin/wp')
+        )
+        
+        created_ids = []
+        
+        with Progress(
+            SpinnerColumn(),
+            TextColumn("[progress.description]{task.description}"),
+            console=console
+        ) as progress:
+            
+            task = progress.add_task(f"Creating {len(posts)} posts...", total=len(posts))
+            
+            for i, post in enumerate(posts, 1):
+                try:
+                    post_id = wp.create_post(
+                        post_title=post.get('title', f'Untitled Post {i}'),
+                        post_content=post.get('content', ''),
+                        post_status=post.get('status', 'publish'),
+                        post_type=post.get('type', 'post')
+                    )
+                    created_ids.append(post_id)
+                    progress.update(task, advance=1)
+                
+                except Exception as e:
+                    console.print(f"[red]✗ Failed to create post {i}: {e}[/red]")
+                    logger.error(f"Failed to create post: {e}")
+        
+        console.print(f"\n[green]✓ Created {len(created_ids)} posts successfully[/green]")
+        console.print(f"Post IDs: {', '.join(map(str, created_ids))}\n")
+
+
+def _parse_file(file_path):
+    """Parse posts from file (JSON, YAML, or CSV)"""
+    
+    file_path = Path(file_path)
+    suffix = file_path.suffix.lower()
+    
+    try:
+        if suffix == '.json':
+            with open(file_path) as f:
+                return json.load(f)
+        
+        elif suffix in ['.yaml', '.yml']:
+            with open(file_path) as f:
+                return yaml.safe_load(f)
+        
+        elif suffix == '.csv':
+            posts = []
+            with open(file_path) as f:
+                reader = csv.DictReader(f)
+                for row in reader:
+                    posts.append(row)
+            return posts
+        
+        else:
+            console.print(f"[red]Unsupported file format: {suffix}[/red]")
+            return []
+    
+    except Exception as e:
+        console.print(f"[red]Error parsing file: {e}[/red]")
+        logger.error(f"File parsing failed: {e}")
+        return []
