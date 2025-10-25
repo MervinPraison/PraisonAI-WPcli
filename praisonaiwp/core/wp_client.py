@@ -17,7 +17,8 @@ class WPClient:
         ssh: SSHManager,
         wp_path: str,
         php_bin: str = 'php',
-        wp_cli: str = '/usr/local/bin/wp'
+        wp_cli: str = '/usr/local/bin/wp',
+        verify_installation: bool = True
     ):
         """
         Initialize WP Client
@@ -27,6 +28,7 @@ class WPClient:
             wp_path: WordPress installation path
             php_bin: PHP binary path (default: 'php')
             wp_cli: WP-CLI binary path (default: '/usr/local/bin/wp')
+            verify_installation: Verify WP-CLI and WordPress are available (default: True)
         """
         self.ssh = ssh
         self.wp_path = wp_path
@@ -34,6 +36,73 @@ class WPClient:
         self.wp_cli = wp_cli
         
         logger.debug(f"Initialized WPClient for {wp_path}")
+        
+        # Verify installation if requested
+        if verify_installation:
+            self._verify_installation()
+    
+    def _verify_installation(self):
+        """
+        Verify WP-CLI and WordPress installation
+        
+        Raises:
+            WPCLIError: If WP-CLI or WordPress not found
+        """
+        try:
+            # Check if WP-CLI binary exists
+            stdout, stderr = self.ssh.execute(f"test -f {self.wp_cli} && echo 'exists' || echo 'not found'")
+            
+            if 'not found' in stdout:
+                raise WPCLIError(
+                    f"WP-CLI not found at {self.wp_cli}\n"
+                    f"\nInstallation instructions:\n"
+                    f"1. Download: curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar\n"
+                    f"2. Make executable: chmod +x wp-cli.phar\n"
+                    f"3. Move to path: sudo mv wp-cli.phar {self.wp_cli}\n"
+                    f"\nOr specify correct path with --wp-cli option"
+                )
+            
+            # Check if WordPress directory exists
+            stdout, stderr = self.ssh.execute(f"test -d {self.wp_path} && echo 'exists' || echo 'not found'")
+            
+            if 'not found' in stdout:
+                raise WPCLIError(
+                    f"WordPress installation not found at {self.wp_path}\n"
+                    f"Please verify the WordPress path is correct."
+                )
+            
+            # Check if wp-config.php exists
+            stdout, stderr = self.ssh.execute(f"test -f {self.wp_path}/wp-config.php && echo 'exists' || echo 'not found'")
+            
+            if 'not found' in stdout:
+                raise WPCLIError(
+                    f"wp-config.php not found in {self.wp_path}\n"
+                    f"This doesn't appear to be a valid WordPress installation."
+                )
+            
+            # Test WP-CLI execution
+            stdout, stderr = self.ssh.execute(f"cd {self.wp_path} && {self.php_bin} {self.wp_cli} --version")
+            
+            if stderr and ('command not found' in stderr.lower() or 'no such file' in stderr.lower()):
+                raise WPCLIError(
+                    f"Failed to execute WP-CLI\n"
+                    f"Error: {stderr}\n"
+                    f"\nPossible issues:\n"
+                    f"1. PHP binary not found: {self.php_bin}\n"
+                    f"2. WP-CLI not executable: {self.wp_cli}\n"
+                    f"3. Missing PHP extensions (mysql, mysqli)\n"
+                    f"\nFor Plesk servers, try: /opt/plesk/php/8.3/bin/php"
+                )
+            
+            if 'WP-CLI' in stdout:
+                logger.info(f"WP-CLI verified: {stdout.strip()}")
+            else:
+                logger.warning(f"WP-CLI verification returned unexpected output: {stdout}")
+        
+        except WPCLIError:
+            raise
+        except Exception as e:
+            logger.warning(f"Could not verify WP-CLI installation: {e}")
     
     def _execute_wp(self, command: str) -> str:
         """
@@ -52,11 +121,36 @@ class WPClient:
         
         logger.debug(f"Executing WP-CLI: {command}")
         
-        stdout, stderr = self.ssh.execute(full_cmd)
+        try:
+            stdout, stderr = self.ssh.execute(full_cmd)
+        except Exception as e:
+            raise WPCLIError(f"Failed to execute WP-CLI command: {e}")
         
-        if stderr and 'Error:' in stderr:
-            logger.error(f"WP-CLI error: {stderr}")
-            raise WPCLIError(f"WP-CLI error: {stderr}")
+        # Check for common error patterns
+        if stderr:
+            error_lower = stderr.lower()
+            
+            if 'command not found' in error_lower:
+                raise WPCLIError(
+                    f"WP-CLI command not found\n"
+                    f"Error: {stderr}\n"
+                    f"\nPlease verify:\n"
+                    f"1. WP-CLI is installed at: {self.wp_cli}\n"
+                    f"2. PHP binary is correct: {self.php_bin}"
+                )
+            
+            if 'no such file or directory' in error_lower:
+                raise WPCLIError(
+                    f"File or directory not found\n"
+                    f"Error: {stderr}\n"
+                    f"\nPlease verify:\n"
+                    f"1. WordPress path: {self.wp_path}\n"
+                    f"2. WP-CLI path: {self.wp_cli}"
+                )
+            
+            if 'error:' in error_lower:
+                logger.error(f"WP-CLI error: {stderr}")
+                raise WPCLIError(f"WP-CLI error: {stderr}")
         
         return stdout.strip()
     

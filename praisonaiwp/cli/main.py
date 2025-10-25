@@ -7,6 +7,8 @@ from praisonaiwp.cli.commands.create import create_command
 from praisonaiwp.cli.commands.update import update_command
 from praisonaiwp.cli.commands.find import find_command
 from praisonaiwp.cli.commands.list import list_command
+from praisonaiwp.cli.commands.install_wp_cli import install_wp_cli
+from praisonaiwp.cli.commands.find_wordpress import find_wordpress
 
 
 @click.group()
@@ -39,6 +41,8 @@ def cli():
 
 # Register commands
 cli.add_command(init_command, name='init')
+cli.add_command(install_wp_cli, name='install-wp-cli')
+cli.add_command(find_wordpress, name='find-wordpress')
 cli.add_command(create_command, name='create')
 cli.add_command(update_command, name='update')
 cli.add_command(find_command, name='find')

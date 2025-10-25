@@ -6,11 +6,20 @@
 
 ### Key Features
 
-- **Simple CLI**: Only 5 core commands (`init`, `create`, `update`, `find`, `list`)
+**Core Features:**
+- **Simple CLI**: 7 intuitive commands (`init`, `create`, `update`, `find`, `list`, `install-wp-cli`, `find-wordpress`)
 - **Smart Defaults**: Auto-detects file formats, execution modes, and optimal settings
 - **Dual Execution Modes**: Sequential (Python) for reliability, Parallel (Node.js) for speed
 - **Precision Editing**: Line-specific and occurrence-specific text replacements
 - **Safe Operations**: Auto-backup, preview mode, dry-run capabilities
+
+**New in v1.0.2:**
+- **SSH Config Integration**: Automatic loading from `~/.ssh/config` with host alias support
+- **WP-CLI Auto-Installer**: One-command installation with OS detection (7 systems supported)
+- **WordPress Auto-Detection**: Multiple search strategies to find WordPress installations
+- **UV Package Manager**: 10-100x faster dependency management
+- **Enhanced Error Handling**: Helpful messages with installation instructions
+- **Installation Verification**: Automatic WP-CLI and WordPress validity checks
 
 ### Design Philosophy
 
@@ -24,11 +33,13 @@
 ```
 User (CLI)
     ↓
-CLI Layer (Click) → 5 Commands: init, create, update, find, list
+CLI Layer (Click) → 7 Commands: init, create, update, find, list, install-wp-cli, find-wordpress
+    ↓
+Setup & Discovery Layer → WP-CLI Installer, WordPress Finder, SSH Config Loader
     ↓
 Operations Layer → Create, Update, Search Operations
     ↓
-Core Layer → SSH Manager, WP Client, Content Editor
+Core Layer → SSH Manager (with SSH config), WP Client (with verification), Content Editor
     ↓
 Execution Modes → Sequential (Python) | Parallel (Node.js)
     ↓
@@ -39,14 +50,33 @@ Remote WordPress Server → WP-CLI, Database, WordPress Core
 
 ```
 praisonaiwp/
-├── setup.py
-├── requirements.txt
+├── pyproject.toml         # Modern Python packaging (uv)
+├── setup.py               # Legacy pip support
+├── requirements.txt       # Legacy dependencies
+├── uv.lock                # UV lock file
+├── .python-version        # Python version (3.8.1+)
 ├── praisonaiwp/
 │   ├── __init__.py
-│   ├── core/              # SSH, WP-CLI, DB, REST API
+│   ├── __version__.py     # Version info
+│   ├── core/              # Core functionality
+│   │   ├── ssh_manager.py     # SSH with config support
+│   │   ├── wp_client.py       # WP-CLI with verification
+│   │   ├── wp_installer.py    # WP-CLI auto-installer (NEW)
+│   │   ├── wp_finder.py       # WordPress auto-detection (NEW)
+│   │   ├── config.py          # Configuration management
+│   │   └── content_editor.py  # Content editing
 │   ├── editors/           # Content editing logic
 │   ├── operations/        # High-level operations
 │   ├── cli/               # CLI commands
+│   │   ├── main.py            # CLI entry point
+│   │   └── commands/
+│   │       ├── init.py            # Initialize config
+│   │       ├── create.py          # Create posts
+│   │       ├── update.py          # Update posts
+│   │       ├── find.py            # Find text
+│   │       ├── list.py            # List posts
+│   │       ├── install_wp_cli.py  # Install WP-CLI (NEW)
+│   │       └── find_wordpress.py  # Find WordPress (NEW)
 │   ├── parallel/          # Node.js bridge for parallel ops
 │   └── utils/             # Logger, validator, backup, progress
 ├── templates/             # Content templates
@@ -56,34 +86,260 @@ praisonaiwp/
 
 ## Core Components
 
-### 1. SSH Manager (`core/ssh_manager.py`)
+### 1. SSH Manager (`core/ssh_manager.py`) - Enhanced v1.0.2
+
+**Core Functionality:**
 - Manages SSH connections using Paramiko
 - Context manager support for auto-cleanup
 - Connection pooling and retry logic
 
-### 2. WP Client (`core/wp_client.py`)
+**NEW - SSH Config Integration:**
+- Automatically reads from `~/.ssh/config`
+- Loads host aliases (e.g., `wp-prod` → full connection details)
+- Supports advanced SSH features:
+  - ProxyJump (bastion hosts)
+  - ControlMaster (connection multiplexing)
+  - Multiple IdentityFile entries
+- Configuration priority: Explicit params → SSH config → Defaults
+- Optional `use_ssh_config=False` to disable
+
+**Implementation Details:**
+```python
+class SSHManager:
+    def __init__(self, hostname, username=None, key_file=None, port=22, use_ssh_config=True):
+        # Load SSH config if enabled
+        if use_ssh_config:
+            ssh_config = paramiko.SSHConfig()
+            ssh_config.parse(open(os.path.expanduser('~/.ssh/config')))
+            host_config = ssh_config.lookup(hostname)
+            
+            # Override with SSH config values
+            self.hostname = host_config.get('hostname', hostname)
+            self.username = username or host_config.get('user')
+            self.port = port or int(host_config.get('port', 22))
+            self.key_file = key_file or host_config.get('identityfile', [None])[0]
+```
+
+**Testing:**
+- ✅ Tested with real server (82.165.193.19)
+- ✅ SSH config alias 'peterborough' working
+- ✅ Connection details loaded automatically
+- ✅ Command execution verified
+- ✅ WP-CLI access confirmed (v2.12.0)
+
+### 2. WP Client (`core/wp_client.py`) - Enhanced v1.0.2
+
+**Core Functionality:**
 - Wrapper around WP-CLI
 - Handles different PHP binaries (Plesk support)
 - Returns Python objects (not raw strings)
 
-### 3. Content Editor (`editors/content_editor.py`)
+**NEW - Installation Verification:**
+- Automatic verification on initialization (`verify_installation=True`)
+- Checks performed:
+  1. WP-CLI binary exists at specified path
+  2. WordPress directory exists
+  3. `wp-config.php` exists (validates WordPress)
+  4. WP-CLI is executable with PHP binary
+  5. PHP has required extensions (mysql, mysqli)
+
+**Enhanced Error Handling:**
+- Clear, actionable error messages
+- Installation instructions included
+- Specific guidance for common issues:
+  - WP-CLI not found → Installation steps
+  - PHP binary issues → Plesk path suggestions
+  - Missing extensions → Installation commands
+  - Permission denied → Ownership fix commands
+
+**Implementation Details:**
+```python
+class WPClient:
+    def __init__(self, ssh, wp_path, php_bin='php', wp_cli='/usr/local/bin/wp', verify_installation=True):
+        if verify_installation:
+            self._verify_installation()
+    
+    def _verify_installation(self):
+        # Check WP-CLI binary
+        stdout, _ = self.ssh.execute(f"test -f {self.wp_cli} && echo 'exists' || echo 'not found'")
+        if 'not found' in stdout:
+            raise WPCLIError(f"WP-CLI not found at {self.wp_cli}\n" + installation_instructions)
+        
+        # Check WordPress directory
+        # Check wp-config.php
+        # Test WP-CLI execution
+```
+
+### 3. WP-CLI Installer (`core/wp_installer.py`) - NEW v1.0.2
+
+**Purpose:** Automatically install WP-CLI on remote servers with OS detection
+
+**Supported Operating Systems:**
+- Ubuntu (18.04, 20.04, 22.04, 24.04)
+- Debian (9, 10, 11, 12)
+- CentOS (7, 8, 9)
+- RHEL (7, 8, 9)
+- Fedora (35+)
+- Alpine Linux
+- macOS (with Homebrew)
+
+**Features:**
+1. **OS Detection:**
+   - Reads `/etc/os-release` for Linux distributions
+   - Uses `sw_vers` for macOS
+   - Fallback to `uname -s`
+   - Extracts OS type and version
+
+2. **WP-CLI Installation:**
+   - Downloads from official source
+   - Tests with PHP before installing
+   - Makes executable
+   - Moves to system path
+   - Verifies installation
+
+3. **Dependency Installation (Optional):**
+   - Ubuntu/Debian: `apt-get install curl php-cli php-mysql`
+   - CentOS/RHEL: `yum install curl php-cli php-mysql`
+   - Alpine: `apk add curl php php-cli php-mysqli`
+   - macOS: `brew install php`
+
+**Implementation Details:**
+```python
+class WPCLIInstaller:
+    def detect_os(self) -> Tuple[str, str]:
+        # Read /etc/os-release
+        # Parse OS type and version
+        # Return ('ubuntu', '22.04')
+    
+    def install_wp_cli(self, install_path='/usr/local/bin/wp', use_sudo=True):
+        # Download WP-CLI
+        self.ssh.execute("curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar")
+        
+        # Test
+        self.ssh.execute(f"{php_bin} wp-cli.phar --version")
+        
+        # Install
+        self.ssh.execute("chmod +x wp-cli.phar")
+        self.ssh.execute(f"{sudo}mv wp-cli.phar {install_path}")
+        
+        # Verify
+        self.ssh.execute(f"{install_path} --version")
+```
+
+**CLI Command:**
+```bash
+praisonaiwp install-wp-cli [OPTIONS]
+  --server NAME          Server to install on
+  --install-path PATH    Installation path (default: /usr/local/bin/wp)
+  --no-sudo              Don't use sudo
+  --install-deps         Install dependencies (curl, php)
+  --php-bin PATH         PHP binary to test with
+  --yes, -y              Skip confirmation
+```
+
+### 4. WordPress Finder (`core/wp_finder.py`) - NEW v1.0.2
+
+**Purpose:** Automatically find WordPress installations on remote servers
+
+**Search Strategies:**
+
+1. **Find wp-config.php:**
+   - Searches common directories: `/var/www`, `/home`, `/usr/share/nginx`, `/opt`, `/srv`
+   - Max depth: 5 levels
+   - Excludes: `wp-content`, `node_modules`, `vendor`
+   - Command: `find /var/www -maxdepth 5 -name 'wp-config.php'`
+
+2. **Check Common Paths:**
+   - `/var/www/html`
+   - `/var/www/html/wordpress`
+   - `/var/www/wordpress`
+   - `/var/www/vhosts/*/httpdocs` (Plesk)
+   - `/home/*/public_html` (cPanel)
+   - `/home/*/www`
+   - `/usr/share/nginx/html`
+   - And more...
+
+3. **Verification:**
+   - Checks `wp-config.php` exists
+   - Checks `wp-content/` directory exists
+   - Checks `wp-includes/` directory exists
+   - Extracts WordPress version from `wp-includes/version.php`
+   - Marks as valid only if all components present
+
+**Features:**
+- `find_all()` - Find all WordPress installations
+- `find_best()` - Auto-select most likely installation
+- `verify_wordpress()` - Verify specific path
+- `interactive_select()` - User selection from multiple installations
+
+**Implementation Details:**
+```python
+class WordPressFinder:
+    def find_wp_config(self) -> List[str]:
+        # Use find command to locate wp-config.php
+        # Return list of directory paths
+    
+    def verify_wordpress(self, path: str) -> Tuple[bool, dict]:
+        # Check wp-config.php
+        # Check wp-content/
+        # Check wp-includes/
+        # Extract version
+        # Return (is_valid, info_dict)
+    
+    def find_best(self) -> Optional[str]:
+        # Find all installations
+        # Prioritize by path pattern
+        # Return best match
+```
+
+**CLI Command:**
+```bash
+praisonaiwp find-wordpress [OPTIONS]
+  --server NAME          Server to search
+  --interactive, -i      Interactively select installation
+  --update-config        Update config with found path
+```
+
+**Example Output:**
+```
+✓ Found 2 WordPress installation(s)
+
+┏━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━┳━━━━━━━━━┳━━━━━━━━━━━━━━━━━━━━━━━━━┓
+┃ # ┃ Path                                ┃ Version ┃ Components              ┃
+┡━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━╇━━━━━━━━━╇━━━━━━━━━━━━━━━━━━━━━━━━━┩
+│ 1 │ /var/www/html                       │ 6.4.2   │ config, content, includes│
+│ 2 │ /var/www/vhosts/example.com/httpdocs│ 6.3.1   │ config, content, includes│
+└───┴─────────────────────────────────────┴─────────┴─────────────────────────┘
+```
+
+### 5. Content Editor (`editors/content_editor.py`)
 - `replace_at_line()` - Replace at specific line number
 - `replace_nth_occurrence()` - Replace 1st, 2nd, nth occurrence
 - `replace_in_range()` - Replace in line range
 - `find_occurrences()` - Find all matches with line numbers
 - `preview_changes()` - Preview before applying
 
-### 4. Operations Layer (`operations/`)
+### 6. Operations Layer (`operations/`)
 - **Create**: Single post, from file, from template, bulk
 - **Update**: Content, with replacement (line/nth), bulk
 - **Search**: Find in post, find in all posts, list posts
 
-### 5. CLI Layer (`cli/`)
-- Built with Click framework
-- 5 commands: init, create, update, find, list
-- Smart defaults and auto-detection
+### 7. CLI Layer (`cli/`) - Enhanced v1.0.2
 
-### 6. Parallel Executor (`parallel/`)
+**Built with Click framework**
+
+**7 Commands:**
+1. `init` - Initialize configuration
+2. `create` - Create WordPress posts
+3. `update` - Update post content
+4. `find` - Find text in posts
+5. `list` - List WordPress posts
+6. `install-wp-cli` - Install WP-CLI automatically (NEW)
+7. `find-wordpress` - Find WordPress installations (NEW)
+
+**Smart defaults and auto-detection**
+
+### 8. Parallel Executor (`parallel/`)
 - Python-Node.js bridge for parallel operations
 - Automatically used when >10 posts
 - 10x faster for bulk operations
