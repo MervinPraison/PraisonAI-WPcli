@@ -30,6 +30,126 @@ See [GENERIC_WP_METHOD.md](GENERIC_WP_METHOD.md) for complete documentation.
 - 🌐 **Multi-Server** - Manage multiple WordPress installations
 - 📝 **Smart** - Auto JSON parsing, underscore-to-hyphen conversion
 
+## All Supported Features
+
+### 📝 Post Management (6 methods)
+- `create_post()` - Create posts with metadata
+- `update_post()` - Update post fields
+- `list_posts()` - List with WP_Query filters
+- `get_post()` - Get post details
+- `delete_post()` - Delete posts (trash/force)
+- `post_exists()` - Check post existence
+
+### 🏷️ Post Meta (4 methods)
+- `get_post_meta()` - Get meta values
+- `set_post_meta()` - Add meta fields
+- `update_post_meta()` - Update meta
+- `delete_post_meta()` - Remove meta
+
+### 📂 Category/Term Management (8 methods)
+- `set_post_categories()` - Set categories
+- `add_post_category()` - Add category
+- `remove_post_category()` - Remove category
+- `list_categories()` - List all categories
+- `get_post_categories()` - Get post categories
+- `create_term()` - Create new term
+- `delete_term()` - Delete term
+- `update_term()` - Update term
+
+### 👥 User Management (9 methods)
+- `list_users()` - List all users
+- `get_user()` - Get user details
+- `create_user()` - Create new user
+- `update_user()` - Update user fields
+- `delete_user()` - Delete user (with reassign)
+- `get_user_meta()` - Get user meta
+- `set_user_meta()` - Set user meta
+- `update_user_meta()` - Update user meta
+- `delete_user_meta()` - Delete user meta
+
+### ⚙️ Option Management (3 methods)
+- `get_option()` - Get option value
+- `set_option()` - Set option value
+- `delete_option()` - Delete option
+
+### 🔌 Plugin Management (3 methods)
+- `list_plugins()` - List all plugins
+- `activate_plugin()` - Activate plugin
+- `deactivate_plugin()` - Deactivate plugin
+
+### 🎨 Theme Management (2 methods)
+- `list_themes()` - List all themes
+- `activate_theme()` - Activate theme
+
+### 📷 Media Management (1 method)
+- `import_media()` - Import media with metadata
+
+### 💬 Comment Management (6 methods)
+- `list_comments()` - List comments
+- `get_comment()` - Get comment details
+- `create_comment()` - Create comment
+- `update_comment()` - Update comment
+- `delete_comment()` - Delete comment
+- `approve_comment()` - Approve comment
+
+### 🗄️ Cache Management (2 methods)
+- `flush_cache()` - Flush object cache
+- `get_cache_type()` - Get cache type
+
+### ⏱️ Transient Management (3 methods)
+- `get_transient()` - Get transient value
+- `set_transient()` - Set transient with expiration
+- `delete_transient()` - Delete transient
+
+### 🧭 Menu Management (4 methods)
+- `list_menus()` - List navigation menus
+- `create_menu()` - Create new menu
+- `delete_menu()` - Delete menu
+- `add_menu_item()` - Add menu item
+
+### 🌐 Core Commands (2 methods)
+- `get_core_version()` - Get WordPress version
+- `core_is_installed()` - Check installation
+
+### 💾 Database (2 methods)
+- `db_query()` - Execute SQL query
+- `search_replace()` - Search and replace in database
+
+### 🚀 Plus UNLIMITED via `wp()` Method!
+Use ANY WP-CLI command directly:
+```python
+# Database operations
+client.wp('db', 'export', 'backup.sql')
+client.wp('db', 'import', 'backup.sql')
+client.wp('db', 'optimize')
+
+# Plugin operations
+client.wp('plugin', 'install', 'akismet')
+client.wp('plugin', 'update', '--all')
+
+# Theme operations
+client.wp('theme', 'install', 'twentytwentyfour')
+
+# Cron management
+client.wp('cron', 'event', 'list', format='json')
+client.wp('cron', 'event', 'run', 'wp_version_check')
+
+# Core management
+client.wp('core', 'update')
+client.wp('core', 'verify-checksums')
+
+# Media operations
+client.wp('media', 'regenerate', '--yes')
+
+# Export/Import
+client.wp('export', author='admin')
+client.wp('import', 'content.xml')
+
+# ANY WP-CLI command works!
+```
+
+**Total: 48 convenience methods + 1000+ commands via `wp()`** 🎉
+
 ### Previous Updates (v1.0.2)
 - 🔑 **SSH Config Support** - Use `~/.ssh/config` host aliases for simplified connection management
 - 🔧 **WP-CLI Auto-Installer** - One-command WP-CLI installation with automatic OS detection (Ubuntu, Debian, CentOS, RHEL, Fedora, Alpine, macOS)
