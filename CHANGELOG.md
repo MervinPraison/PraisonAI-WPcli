@@ -5,6 +5,32 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.7] - 2025-11-17
+
+### Added
+- **Post Deletion**: delete_post() with force option
+- **Post Exists Check**: post_exists() to verify post existence
+- **Post Meta Management**: Complete CRUD operations
+  - get_post_meta() - Get single or all meta values
+  - set_post_meta() - Set meta value
+  - update_post_meta() - Update existing meta
+  - delete_post_meta() - Remove meta field
+- **User Management**: Basic user operations
+  - list_users() - List users with filters
+  - get_user() - Get user details
+- **Option Management**: WordPress options CRUD
+  - get_option() - Get option value
+  - set_option() - Set option value
+  - delete_option() - Remove option
+
+### Changed
+- Updated WPCLI.md with comprehensive feature matrix
+- Enhanced summary section with all implemented features
+
+### Testing
+- Added 15+ new unit tests
+- All tests passing (31/31)
+
 ## [1.0.6] - 2025-11-17
 
 ### Added
