@@ -256,11 +256,11 @@ class WPClient:
             query: SQL query
             
         Returns:
-            Query result
+            Query result as JSON string
         """
         # Escape query for shell
         escaped_query = query.replace('"', '\\"').replace('$', '\\$')
-        cmd = f'db query "{escaped_query}"'
+        cmd = f'db query "{escaped_query}" --format=json'
         
         return self._execute_wp(cmd)
     
