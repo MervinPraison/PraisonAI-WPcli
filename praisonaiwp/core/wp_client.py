@@ -104,9 +104,81 @@ class WPClient:
         except Exception as e:
             logger.warning(f"Could not verify WP-CLI installation: {e}")
     
+    def wp(self, *args, **kwargs) -> Any:
+        """
+        Generic WP-CLI command executor - supports ANY WP-CLI command
+        
+        This method provides direct access to WP-CLI without needing specific wrapper methods.
+        Arguments are automatically converted to WP-CLI flags and options.
+        
+        Args:
+            *args: Command parts (e.g., 'post', 'list')
+            **kwargs: Command options (converted to --key=value flags)
+                     - Use True for boolean flags (e.g., porcelain=True -> --porcelain)
+                     - Use format='json' for automatic JSON parsing
+                     - Underscores in keys are converted to hyphens (dry_run -> --dry-run)
+        
+        Returns:
+            Command output (string), or parsed JSON if format='json'
+        
+        Examples:
+            # Create a user
+            wp('user', 'create', 'john', 'john@example.com', role='editor', porcelain=True)
+            
+            # List posts
+            posts = wp('post', 'list', status='publish', format='json')
+            
+            # Flush cache
+            wp('cache', 'flush')
+            
+            # Search and replace
+            wp('search-replace', 'old', 'new', dry_run=True)
+            
+            # Plugin operations
+            wp('plugin', 'activate', 'akismet')
+            wp('plugin', 'list', status='active', format='json')
+        
+        Raises:
+            WPCLIError: If command fails
+        """
+        # Build command from args
+        cmd_parts = list(args)
+        
+        # Add kwargs as flags/options
+        auto_parse_json = False
+        for key, value in kwargs.items():
+            # Convert underscores to hyphens for WP-CLI convention
+            flag_key = key.replace('_', '-')
+            
+            if value is True:
+                # Boolean flag (e.g., --porcelain, --dry-run)
+                cmd_parts.append(f"--{flag_key}")
+            elif value is not False and value is not None:
+                # Key-value option
+                if flag_key == 'format' and value == 'json':
+                    auto_parse_json = True
+                
+                # Escape single quotes in values
+                escaped_value = str(value).replace("'", "'\\''")
+                cmd_parts.append(f"--{flag_key}='{escaped_value}'")
+        
+        # Execute command
+        cmd = ' '.join(cmd_parts)
+        result = self._execute_wp(cmd)
+        
+        # Auto-parse JSON if format=json
+        if auto_parse_json and result.strip():
+            try:
+                return json.loads(result)
+            except json.JSONDecodeError:
+                logger.warning(f"Failed to parse JSON output: {result[:100]}")
+                return result
+        
+        return result.strip() if result else ""
+    
     def _execute_wp(self, command: str) -> str:
         """
-        Execute WP-CLI command
+        Execute WP-CLI command (internal method)
         
         Args:
             command: WP-CLI command (without 'wp' prefix)

@@ -5,6 +5,30 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.13] - 2025-11-17
+
+### Added
+- **Generic `wp()` Method**: Universal WP-CLI command executor
+  - Supports ALL WP-CLI commands (1000+ commands)
+  - Automatic JSON parsing with `format='json'`
+  - Underscore to hyphen conversion (dry_run → --dry-run)
+  - Boolean flag support (porcelain=True → --porcelain)
+  - No need to wait for wrapper methods
+  - See GENERIC_WP_METHOD.md for comprehensive guide
+
+### Changed
+- Hybrid approach: Keep convenience methods + add generic wp() method
+- Users can now use ANY WP-CLI command directly
+- Enhanced flexibility for power users
+
+### Testing
+- Added 4 new unit tests for wp() method
+- All 68/69 tests passing (99% pass rate)
+
+### Documentation
+- Added GENERIC_WP_METHOD.md with examples and best practices
+- Documented when to use convenience methods vs wp()
+
 ## [1.0.12] - 2025-11-17
 
 ### Added

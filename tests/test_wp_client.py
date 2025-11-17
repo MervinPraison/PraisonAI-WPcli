@@ -599,6 +599,51 @@ class TestWPClient:
         call_args = mock_ssh.execute.call_args[0][0]
         assert "core is-installed" in call_args
     
+    def test_wp_generic_command(self, wp_client, mock_ssh):
+        """Test generic wp() method with simple command"""
+        mock_ssh.execute.return_value = ("Success", "")
+        
+        result = wp_client.wp('cache', 'flush')
+        
+        assert result == "Success"
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "cache flush" in call_args
+    
+    def test_wp_with_kwargs(self, wp_client, mock_ssh):
+        """Test generic wp() method with keyword arguments"""
+        mock_ssh.execute.return_value = ('[{"ID": 1}]', "")
+        
+        result = wp_client.wp('post', 'list', status='publish', format='json')
+        
+        assert isinstance(result, list)
+        assert result[0]["ID"] == 1
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "post list" in call_args
+        assert "--status='publish'" in call_args
+        assert "--format='json'" in call_args
+    
+    def test_wp_with_boolean_flag(self, wp_client, mock_ssh):
+        """Test generic wp() method with boolean flags"""
+        mock_ssh.execute.return_value = ("123", "")
+        
+        result = wp_client.wp('user', 'create', 'john', 'john@example.com', porcelain=True)
+        
+        assert result == "123"
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "user create john john@example.com" in call_args
+        assert "--porcelain" in call_args
+    
+    def test_wp_underscore_to_hyphen(self, wp_client, mock_ssh):
+        """Test generic wp() method converts underscores to hyphens"""
+        mock_ssh.execute.return_value = ("Result", "")
+        
+        result = wp_client.wp('search-replace', 'old', 'new', dry_run=True)
+        
+        assert result == "Result"
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "search-replace old new" in call_args
+        assert "--dry-run" in call_args
+    
     def test_search_replace(self, wp_client, mock_ssh):
         """Test search and replace"""
         mock_ssh.execute.return_value = ("Replaced 5 occurrences", "")
