@@ -261,6 +261,34 @@ praisonaiwp list --type page
 praisonaiwp list --status draft
 ```
 
+### 8. Manage Categories
+
+```bash
+# List all categories
+praisonaiwp category list
+
+# Search for categories
+praisonaiwp category search "Technology"
+
+# List categories for a specific post
+praisonaiwp category list 123
+
+# Set categories (replace all)
+praisonaiwp category set 123 --category "Tech,AI"
+
+# Add categories (append)
+praisonaiwp category add 123 --category "Python"
+
+# Remove categories
+praisonaiwp category remove 123 --category "Uncategorized"
+
+# Create post with categories
+praisonaiwp create "My Post" --content "Hello" --category "Tech,AI"
+
+# Update post categories
+praisonaiwp update 123 --category "Tech,Python"
+```
+
 ## File Formats
 
 ### JSON Format
@@ -347,9 +375,48 @@ Create 100 posts in ~8 seconds (vs 50+ seconds sequential):
 praisonaiwp create 100_posts.json
 ```
 
-## Architecture
+## Troubleshooting
 
-See [ARCHITECTURE.md](ARCHITECTURE.md) for detailed technical documentation.
+### SSH Connection Issues
+
+```bash
+# Test SSH connection manually
+ssh -i ~/.ssh/id_ed25519 user@hostname
+
+# Fix key permissions
+chmod 600 ~/.ssh/id_ed25519
+chmod 600 ~/.ssh/config
+```
+
+### WP-CLI Not Found
+
+```bash
+# Install WP-CLI automatically
+praisonaiwp install-wp-cli -y
+
+# Or check WP-CLI path manually
+ssh user@hostname "which wp"
+```
+
+### PHP MySQL Extension Missing
+
+```bash
+# Use Plesk PHP binary (edit config.yaml)
+php_bin: /opt/plesk/php/8.3/bin/php
+```
+
+### WordPress Path Not Found
+
+```bash
+# Auto-detect WordPress installation
+praisonaiwp find-wordpress --update-config
+```
+
+## Documentation
+
+- **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture and design
+- **[TESTING.md](TESTING.md)** - Testing guide and best practices
+- **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
 
 ## Development
 

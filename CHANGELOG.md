@@ -1,9 +1,33 @@
 # Changelog
 
-All notable changes to PraisonAIWP will be documented in this file.
+All notable changes to PraisonAI WPcli will be documented in this file.
 
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
+
+## [1.0.5] - 2025-11-17
+
+### Added
+- **Category Management**: Full category support for WordPress posts
+  - New `category` command group with subcommands: set, add, remove, list, search
+  - `--category` and `--category-id` options for create and update commands
+  - 7 new WPClient methods for category operations
+  - Rich table output for category listings
+  - Support for both category names and IDs
+- **SSH Config Host Integration**: Reference SSH config hosts directly in config.yaml
+  - New `ssh_host` parameter to reference `~/.ssh/config` hosts
+  - Automatic loading of connection details from SSH config
+  - Support for mixing SSH config and direct specification
+  - Direct values override SSH config values
+- **Enhanced Documentation**: Comprehensive README updates with all features
+
+### Changed
+- Updated repository name to PraisonAI-WPcli
+- Improved README with category examples and troubleshooting section
+- Enhanced configuration flexibility with multiple methods
+
+### Fixed
+- Config loading now properly supports both ssh_host and direct specification
 
 ## [1.0.4] - 2025-10-26
 
