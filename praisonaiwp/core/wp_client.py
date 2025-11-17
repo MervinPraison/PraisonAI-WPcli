@@ -638,6 +638,145 @@ class WPClient:
         logger.info(f"Deleted meta {key} for user {user_id}")
         return True
     
+    def flush_cache(self) -> bool:
+        """
+        Flush object cache
+        
+        Returns:
+            True if successful
+        """
+        cmd = "cache flush"
+        self._execute_wp(cmd)
+        logger.info("Flushed cache")
+        return True
+    
+    def get_cache_type(self) -> str:
+        """
+        Get cache type
+        
+        Returns:
+            Cache type string
+        """
+        cmd = "cache type"
+        result = self._execute_wp(cmd)
+        return result.strip()
+    
+    def get_transient(self, key: str) -> str:
+        """
+        Get transient value
+        
+        Args:
+            key: Transient key
+            
+        Returns:
+            Transient value
+        """
+        cmd = f"transient get {key}"
+        result = self._execute_wp(cmd)
+        return result.strip()
+    
+    def set_transient(self, key: str, value: str, expiration: int = None) -> bool:
+        """
+        Set transient value
+        
+        Args:
+            key: Transient key
+            value: Transient value
+            expiration: Expiration time in seconds (optional)
+            
+        Returns:
+            True if successful
+        """
+        escaped_value = str(value).replace("'", "'\\''")
+        cmd = f"transient set {key} '{escaped_value}'"
+        if expiration:
+            cmd += f" {expiration}"
+        self._execute_wp(cmd)
+        logger.info(f"Set transient {key}")
+        return True
+    
+    def delete_transient(self, key: str) -> bool:
+        """
+        Delete transient
+        
+        Args:
+            key: Transient key
+            
+        Returns:
+            True if successful
+        """
+        cmd = f"transient delete {key}"
+        self._execute_wp(cmd)
+        logger.info(f"Deleted transient {key}")
+        return True
+    
+    def list_menus(self) -> List[Dict[str, Any]]:
+        """
+        List navigation menus
+        
+        Returns:
+            List of menu dictionaries
+        """
+        cmd = "menu list --format=json"
+        result = self._execute_wp(cmd)
+        return json.loads(result)
+    
+    def create_menu(self, name: str) -> int:
+        """
+        Create navigation menu
+        
+        Args:
+            name: Menu name
+            
+        Returns:
+            Menu ID
+        """
+        cmd = f"menu create '{name}' --porcelain"
+        result = self._execute_wp(cmd)
+        menu_id = int(result.strip())
+        logger.info(f"Created menu {name} with ID {menu_id}")
+        return menu_id
+    
+    def delete_menu(self, menu_id: int) -> bool:
+        """
+        Delete navigation menu
+        
+        Args:
+            menu_id: Menu ID
+            
+        Returns:
+            True if successful
+        """
+        cmd = f"menu delete {menu_id}"
+        self._execute_wp(cmd)
+        logger.info(f"Deleted menu {menu_id}")
+        return True
+    
+    def add_menu_item(self, menu_id: int, **kwargs) -> int:
+        """
+        Add item to menu
+        
+        Args:
+            menu_id: Menu ID
+            **kwargs: Item properties (title, url, object-id, type, etc.)
+            
+        Returns:
+            Menu item ID
+        """
+        args = []
+        for key, value in kwargs.items():
+            if isinstance(value, str):
+                escaped_value = value.replace("'", "'\\''")
+                args.append(f"--{key}='{escaped_value}'")
+            else:
+                args.append(f"--{key}={value}")
+        
+        cmd = f"menu item add-custom {menu_id} {' '.join(args)} --porcelain"
+        result = self._execute_wp(cmd)
+        item_id = int(result.strip())
+        logger.info(f"Added menu item {item_id} to menu {menu_id}")
+        return item_id
+    
     def import_media(self, file_path: str, post_id: int = None, **kwargs) -> int:
         """
         Import media file to WordPress

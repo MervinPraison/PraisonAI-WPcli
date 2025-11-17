@@ -159,24 +159,25 @@
 
 | WP-CLI Command | Supported | Feature |
 |---|---|---|
-| **wp menu list** | ❌ | List menus |
-| **wp menu create** | ❌ | Create menu |
-| **wp menu item add** | ❌ | Add menu item |
+| **wp menu list** | ✅ | List menus |
+| **wp menu create** | ✅ | Create menu |
+| **wp menu delete** | ✅ | Delete menu |
+| **wp menu item add** | ✅ | Add custom menu item |
 
 ## Cache Commands
 
 | WP-CLI Command | Supported | Feature |
 |---|---|---|
-| **wp cache flush** | ❌ | Flush cache |
-| **wp cache type** | ❌ | Get cache type |
+| **wp cache flush** | ✅ | Flush cache |
+| **wp cache type** | ✅ | Get cache type |
 
 ## Transient Commands
 
 | WP-CLI Command | Supported | Feature |
 |---|---|---|
-| **wp transient delete** | ❌ | Delete transient |
-| **wp transient get** | ❌ | Get transient |
-| **wp transient set** | ❌ | Set transient |
+| **wp transient delete** | ✅ | Delete transient |
+| **wp transient get** | ✅ | Get transient |
+| **wp transient set** | ✅ | Set transient with expiration |
 
 ## Cron Commands
 
@@ -206,6 +207,9 @@
 - **Theme Management**: list, activate
 - **Media Management**: import with metadata and post attachment
 - **Comment Management**: list, get, create, update, delete, approve
+- **Cache Management**: flush, get type
+- **Transient Management**: get, set, delete
+- **Menu Management**: list, create, delete, add items
 - **Database**: queries, search-replace
 - **All WP_Query parameters** via `wp post list`
 
@@ -218,8 +222,6 @@
 - Core WordPress management
 - Media regenerate thumbnails
 - Comment unapprove/spam/trash
-- Menu management
-- Cache/transient management
 - Cron management
 - Export/import
 

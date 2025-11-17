@@ -454,6 +454,100 @@ class TestWPClient:
         call_args = mock_ssh.execute.call_args[0][0]
         assert "user meta delete 1 custom_key" in call_args
     
+    def test_flush_cache(self, wp_client, mock_ssh):
+        """Test flush cache"""
+        mock_ssh.execute.return_value = ("Success: Flushed cache", "")
+        
+        result = wp_client.flush_cache()
+        
+        assert result is True
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "cache flush" in call_args
+    
+    def test_get_cache_type(self, wp_client, mock_ssh):
+        """Test get cache type"""
+        mock_ssh.execute.return_value = ("Default", "")
+        
+        result = wp_client.get_cache_type()
+        
+        assert result == "Default"
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "cache type" in call_args
+    
+    def test_get_transient(self, wp_client, mock_ssh):
+        """Test get transient"""
+        mock_ssh.execute.return_value = ("transient_value", "")
+        
+        result = wp_client.get_transient("test_key")
+        
+        assert result == "transient_value"
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "transient get test_key" in call_args
+    
+    def test_set_transient(self, wp_client, mock_ssh):
+        """Test set transient"""
+        mock_ssh.execute.return_value = ("Success: Set transient", "")
+        
+        result = wp_client.set_transient("test_key", "value", 3600)
+        
+        assert result is True
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "transient set test_key" in call_args
+        assert "3600" in call_args
+    
+    def test_delete_transient(self, wp_client, mock_ssh):
+        """Test delete transient"""
+        mock_ssh.execute.return_value = ("Success: Deleted transient", "")
+        
+        result = wp_client.delete_transient("test_key")
+        
+        assert result is True
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "transient delete test_key" in call_args
+    
+    def test_list_menus(self, wp_client, mock_ssh):
+        """Test list menus"""
+        mock_ssh.execute.return_value = ('[{"term_id": 2, "name": "Main Menu"}]', "")
+        
+        result = wp_client.list_menus()
+        
+        assert len(result) == 1
+        assert result[0]["name"] == "Main Menu"
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "menu list --format=json" in call_args
+    
+    def test_create_menu(self, wp_client, mock_ssh):
+        """Test create menu"""
+        mock_ssh.execute.return_value = ("5", "")
+        
+        result = wp_client.create_menu("Footer Menu")
+        
+        assert result == 5
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "menu create" in call_args
+        assert "Footer Menu" in call_args
+    
+    def test_delete_menu(self, wp_client, mock_ssh):
+        """Test delete menu"""
+        mock_ssh.execute.return_value = ("Success: Deleted menu", "")
+        
+        result = wp_client.delete_menu(5)
+        
+        assert result is True
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "menu delete 5" in call_args
+    
+    def test_add_menu_item(self, wp_client, mock_ssh):
+        """Test add menu item"""
+        mock_ssh.execute.return_value = ("10", "")
+        
+        result = wp_client.add_menu_item(5, title="Home", url="https://example.com")
+        
+        assert result == 10
+        call_args = mock_ssh.execute.call_args[0][0]
+        assert "menu item add-custom 5" in call_args
+        assert "--title=" in call_args
+    
     def test_search_replace(self, wp_client, mock_ssh):
         """Test search and replace"""
         mock_ssh.execute.return_value = ("Replaced 5 occurrences", "")
