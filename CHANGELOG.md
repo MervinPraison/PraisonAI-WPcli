@@ -5,6 +5,27 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.16] - 2025-11-18
+
+### Added
+- **Advanced Post Update Options**: Full WP-CLI post update support
+  - `--post-excerpt` - Update post excerpt
+  - `--post-author` - Update post author (user ID or login)
+  - `--post-date` - Update post date (YYYY-MM-DD HH:MM:SS)
+  - `--tags` - Update tags (comma-separated)
+  - `--meta` - Update post meta in JSON format
+  - `--comment-status` - Update comment status (open/closed)
+
+### Documentation
+- Updated README with all update command options
+- Added examples for updating excerpt, author, date, tags, and meta
+- Updated options summary table
+
+### Notes
+- `update` command now has feature parity with WP-CLI `post update`
+- Both `create` and `update` commands support full post customization
+- All WP-CLI post parameters accessible via CLI
+
 ## [1.0.15] - 2025-11-18
 
 ### Added

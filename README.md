@@ -523,15 +523,21 @@ praisonaiwp create posts.json
 praisonaiwp update POST_ID [FIND_TEXT] [REPLACE_TEXT] [OPTIONS]
 
 Options:
-  --line INTEGER        Update specific line number
-  --nth INTEGER         Update nth occurrence
-  --preview             Preview changes without applying
-  --category TEXT       Comma-separated category names/slugs
-  --category-id TEXT    Comma-separated category IDs
-  --post-content TEXT   Replace entire post content
-  --post-title TEXT     Update post title
-  --post-status TEXT    Update post status (publish, draft, private)
-  --server TEXT         Server name from config
+  --line INTEGER         Update specific line number
+  --nth INTEGER          Update nth occurrence
+  --preview              Preview changes without applying
+  --category TEXT        Comma-separated category names/slugs
+  --category-id TEXT     Comma-separated category IDs
+  --post-content TEXT    Replace entire post content
+  --post-title TEXT      Update post title
+  --post-status TEXT     Update post status (publish, draft, private)
+  --post-excerpt TEXT    Update post excerpt
+  --post-author TEXT     Update post author (user ID or login)
+  --post-date TEXT       Update post date (YYYY-MM-DD HH:MM:SS)
+  --tags TEXT            Update tags (comma-separated)
+  --meta TEXT            Update post meta in JSON format
+  --comment-status TEXT  Update comment status (open, closed)
+  --server TEXT          Server name from config
 ```
 
 **Examples:**
@@ -553,8 +559,30 @@ praisonaiwp update 123 --post-content "New full content"
 praisonaiwp update 123 --post-title "New Title"
 praisonaiwp update 123 --post-status draft
 
+# Update excerpt and tags (NEW in v1.0.16)
+praisonaiwp update 123 --post-excerpt "New summary"
+praisonaiwp update 123 --tags "python,wordpress,automation"
+
+# Update author and date
+praisonaiwp update 123 --post-author praison
+praisonaiwp update 123 --post-date "2024-01-15 10:00:00"
+
+# Update custom meta
+praisonaiwp update 123 --meta '{"views":"1000","featured":"yes"}'
+
+# Update comment status
+praisonaiwp update 123 --comment-status closed
+
 # Update categories
 praisonaiwp update 123 --category "Tech,AI"
+
+# Combine multiple updates
+praisonaiwp update 123 \
+  --post-title "Updated Title" \
+  --post-excerpt "New excerpt" \
+  --tags "python,ai" \
+  --meta '{"updated":"yes"}' \
+  --comment-status open
 ```
 
 ---
@@ -683,7 +711,7 @@ praisonaiwp create My Title --content My content  # ERROR: Ambiguous
 | Command | Key Options |
 |---------|-------------|
 | `create` | `--content`, `--status`, `--type`, `--category`, `--category-id`, `--author`, `--excerpt`, `--date`, `--tags`, `--meta`, `--comment-status`, `--server` |
-| `update` | `--line`, `--nth`, `--preview`, `--category`, `--category-id`, `--post-content`, `--post-title`, `--post-status`, `--server` |
+| `update` | `--line`, `--nth`, `--preview`, `--category`, `--category-id`, `--post-content`, `--post-title`, `--post-status`, `--post-excerpt`, `--post-author`, `--post-date`, `--tags`, `--meta`, `--comment-status`, `--server` |
 | `list` | `--type`, `--status`, `--limit`, `-s/--search`, `--server` |
 | `find` | `--type`, `--server` |
 | `category` | Subcommands: `list`, `search`, `set`, `add`, `remove` with `--category`, `--category-id` |

@@ -59,9 +59,16 @@ def _parse_category_input(category_str, category_id_str, wp):
 @click.option('--post-content', help='Replace entire post content')
 @click.option('--post-title', help='Update post title')
 @click.option('--post-status', help='Update post status (publish, draft, private)')
+@click.option('--post-excerpt', help='Update post excerpt')
+@click.option('--post-author', help='Update post author (user ID or login)')
+@click.option('--post-date', help='Update post date (YYYY-MM-DD HH:MM:SS)')
+@click.option('--tags', help='Update tags (comma-separated)')
+@click.option('--meta', help='Update post meta in JSON format')
+@click.option('--comment-status', help='Update comment status (open, closed)')
 @click.option('--server', default=None, help='Server name from config')
 def update_command(post_id, find_text, replace_text, line, nth, preview, category, category_id, 
-                   post_content, post_title, post_status, server):
+                   post_content, post_title, post_status, post_excerpt, post_author, post_date,
+                   tags, meta, comment_status, server):
     """
     Update WordPress post content
     
@@ -89,9 +96,13 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
         server_config = config.get_server(server)
         
         # Validate inputs - need at least one update operation
-        if not (find_text and replace_text) and not (category or category_id) and not post_content and not post_title and not post_status:
+        if not (find_text and replace_text) and not (category or category_id) and not any([
+            post_content, post_title, post_status, post_excerpt, post_author, 
+            post_date, tags, meta, comment_status
+        ]):
             console.print("[red]Error: At least one update operation is required[/red]")
-            console.print("Options: find/replace text, --post-content, --post-title, --post-status, --category")
+            console.print("Options: find/replace text, --post-content, --post-title, --post-status, --post-excerpt,")
+            console.print("         --post-author, --post-date, --tags, --meta, --comment-status, --category")
             raise click.Abort()
         
         console.print(f"\n[yellow]Fetching post {post_id}...[/yellow]")
@@ -128,6 +139,32 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
             if post_status:
                 update_fields['post_status'] = post_status
                 console.print(f"[cyan]Updating post status to: {post_status}[/cyan]")
+            if post_excerpt:
+                update_fields['post_excerpt'] = post_excerpt
+                console.print("[cyan]Updating post excerpt...[/cyan]")
+            if post_author:
+                # Handle author lookup
+                if post_author.isdigit():
+                    update_fields['post_author'] = int(post_author)
+                else:
+                    user = wp.get_user(post_author)
+                    if user:
+                        update_fields['post_author'] = int(user['ID'])
+                    else:
+                        console.print(f"[yellow]Warning: User '{post_author}' not found[/yellow]")
+                console.print(f"[cyan]Updating post author...[/cyan]")
+            if post_date:
+                update_fields['post_date'] = post_date
+                console.print(f"[cyan]Updating post date to: {post_date}[/cyan]")
+            if tags:
+                update_fields['tags_input'] = tags
+                console.print(f"[cyan]Updating tags...[/cyan]")
+            if meta:
+                update_fields['meta_input'] = meta
+                console.print("[cyan]Updating post meta...[/cyan]")
+            if comment_status:
+                update_fields['comment_status'] = comment_status
+                console.print(f"[cyan]Updating comment status to: {comment_status}[/cyan]")
             
             if update_fields:
                 wp.update_post(post_id, **update_fields)
