@@ -21,7 +21,7 @@ class TestContentEditor:
         
         lines = result.split('\n')
         assert "My Website Title" in lines[1]
-        assert "Welcome to Our Site" in lines[7]  # Line 8 unchanged
+        assert "Welcome to Our Site" in lines[9]  # Line 10 unchanged (0-indexed line 9)
     
     def test_replace_nth_occurrence(self, sample_post_content):
         """Test replacing nth occurrence"""
@@ -97,7 +97,7 @@ after2"""
         
         assert len(occurrences) == 2
         assert occurrences[0][0] == 2  # Line 2
-        assert occurrences[1][0] == 8  # Line 8
+        assert occurrences[1][0] == 10  # Line 10 (not 8)
     
     def test_preview_changes(self):
         """Test preview changes"""

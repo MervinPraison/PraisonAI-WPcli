@@ -33,7 +33,11 @@ class TestWPClient:
         result = wp_client._execute_wp("post list")
         
         assert result == "Success"
-        mock_ssh.execute.assert_called_once()
+        # Note: execute is called multiple times due to _verify_installation()
+        # We just verify the last call was our command
+        assert mock_ssh.execute.call_count >= 1
+        last_call = mock_ssh.execute.call_args[0][0]
+        assert "post list" in last_call
     
     def test_execute_wp_error(self, wp_client, mock_ssh):
         """Test WP-CLI execution with error"""

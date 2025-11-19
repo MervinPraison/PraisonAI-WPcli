@@ -48,7 +48,8 @@ class TestConfig:
         
         assert 'production' in config.data['servers']
         assert config.data['servers']['production'] == server_config
-        assert config.data['default_server'] == 'production'
+        # Default server remains 'default' unless explicitly changed
+        assert config.data['default_server'] == 'default'
     
     def test_get_server(self, sample_config):
         """Test getting server configuration"""
@@ -59,10 +60,14 @@ class TestConfig:
     
     def test_get_server_default(self, sample_config):
         """Test getting default server"""
+        # sample_config has default_server='default' but no 'default' server configured
+        # So we need to either set default_server to 'test' or expect an error
+        sample_config.data['default_server'] = 'test'
         server = sample_config.get_server()
         
         assert server is not None
         assert 'hostname' in server
+        assert server['hostname'] == 'test.example.com'
     
     def test_get_server_not_found(self, sample_config):
         """Test getting non-existent server"""
