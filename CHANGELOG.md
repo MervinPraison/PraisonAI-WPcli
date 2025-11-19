@@ -5,7 +5,26 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [1.0.21] - 2025-11-19
+## [1.0.22] - 2025-11-19
+
+### Fixed
+- **Reverted v1.0.21**: Fixed regression where categories were not being set
+  - v1.0.21 suppressed errors too aggressively, breaking category assignment
+  - Restored v1.0.20 approach: catch error, verify category was set, continue
+  - Categories now work correctly again
+  
+### Lesson Learned
+- Warning messages are cosmetic but the error handling is functional
+- Suppressing at lower levels (SSH/WP client) breaks the verification logic
+- The v1.0.20 approach is correct: handle at the business logic level
+
+### Status
+- ⚠️ Warning messages still appear (cosmetic only)
+- ✅ Categories set correctly
+- ✅ All functionality preserved
+- ✅ 196 tests passing
+
+## [1.0.21] - 2025-11-19 [YANKED - DO NOT USE]
 
 ### Fixed
 - **Complete Warning Suppression**: Fully suppressed "Term doesn't exist" warnings

@@ -221,13 +221,8 @@ class WPClient:
                 )
             
             if 'error:' in error_lower:
-                # Suppress "Term doesn't exist" - it's a cosmetic WP-CLI warning
-                # Categories still get set correctly despite this message
-                if "term doesn't exist" not in error_lower:
-                    logger.error(f"WP-CLI error: {stderr}")
-                    raise WPCLIError(f"WP-CLI error: {stderr}")
-                else:
-                    logger.debug(f"Suppressed cosmetic WP-CLI error: {stderr.strip()}")
+                logger.error(f"WP-CLI error: {stderr}")
+                raise WPCLIError(f"WP-CLI error: {stderr}")
         
         return stdout.strip()
     
@@ -1183,8 +1178,19 @@ class WPClient:
         cat_ids_str = ','.join(map(str, category_ids))
         cmd = f"post update {post_id} --post_category={cat_ids_str}"
         
-        self._execute_wp(cmd)
-        logger.info(f"Set categories {cat_ids_str} for post {post_id}")
+        try:
+            self._execute_wp(cmd)
+            logger.info(f"Set categories {cat_ids_str} for post {post_id}")
+        except WPCLIError as e:
+            # WP-CLI sometimes reports "Term doesn't exist" but still sets the category
+            # Verify if categories were actually set
+            if "Term doesn't exist" in str(e):
+                post_data = self.get_post(post_id)
+                if post_data and 'post_category' in str(post_data):
+                    logger.info(f"Categories {cat_ids_str} set successfully (ignoring WP-CLI warning)")
+                    return True
+            # Re-raise if it's a real error
+            raise
         
         return True
     

@@ -146,14 +146,8 @@ class SSHManager:
             stdout_str = stdout.read().decode('utf-8')
             stderr_str = stderr.read().decode('utf-8')
             
-            # Log stderr warnings, but suppress known cosmetic warnings
             if stderr_str and 'Error:' in stderr_str:
-                # Suppress "Term doesn't exist" - it's a WP-CLI cosmetic warning
-                # Categories still get set correctly despite this message
-                if "Term doesn't exist" not in stderr_str:
-                    logger.warning(f"Command stderr: {stderr_str}")
-                else:
-                    logger.debug(f"Suppressed cosmetic WP-CLI warning: {stderr_str.strip()}")
+                logger.warning(f"Command stderr: {stderr_str}")
             
             logger.debug(f"Command completed with {len(stdout_str)} bytes output")
             
