@@ -1,5 +1,6 @@
-"""Tests for Config"""
+"""Tests for configuration management"""
 
+import sys
 import pytest
 from pathlib import Path
 from praisonaiwp.core.config import Config
@@ -103,8 +104,9 @@ class TestConfig:
         with pytest.raises(ConfigNotFoundError):
             config._load_config()
     
+    @pytest.mark.skipif(sys.platform == "win32", reason="File permissions work differently on Windows")
     def test_config_file_permissions(self, temp_config_dir):
-        """Test config file has correct permissions"""
+        """Test config file has correct permissions (Unix only)"""
         config_path = temp_config_dir / "config.yaml"
         
         config = Config(str(config_path))
