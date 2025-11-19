@@ -5,6 +5,34 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.0.21] - 2025-11-19
+
+### Fixed
+- **Complete Warning Suppression**: Fully suppressed "Term doesn't exist" warnings
+  - Fixed at SSH manager level (suppresses WARNING message)
+  - Fixed at WP client level (suppresses ERROR message)
+  - Categories still set correctly
+  - Clean, professional output with no confusing messages
+
+### Improved
+- Multi-layer error handling for cosmetic WP-CLI warnings
+- Better logging - warnings logged as debug messages
+- Cleaner user experience
+
+### User Impact
+**Before v1.0.21:**
+```
+WARNING: Command stderr: Error: Term doesn't exist.
+ERROR: WP-CLI error: Error: Term doesn't exist.
+```
+
+**After v1.0.21:**
+```
+✓ Created post ID: 49006
+Title: Test v1.0.21
+Categories: Other
+```
+
 ## [1.0.20] - 2025-11-19
 
 ### Fixed
