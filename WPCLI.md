@@ -207,7 +207,7 @@ client.wp('cron', 'event', 'list', format='json')
 client.wp('media', 'regenerate', '--yes')
 ```
 
-See **GENERIC_WP_METHOD.md** for complete documentation.
+See **README.md** (Universal WP-CLI Access section) for complete documentation.
 
 The table below shows **convenience methods** (with IDE autocomplete and docs).
 For everything else, use the powerful `wp()` method!
@@ -234,6 +234,7 @@ For everything else, use the powerful `wp()` method!
 - **Core Commands**: version check, installation check
 - **Database**: queries, search-replace
 - **All WP_Query parameters** via `wp post list`
+- **HTML to Gutenberg Blocks Converter** (v1.0.17): Auto-convert HTML to WordPress blocks via `--convert-to-blocks` flag
 
 ### Not Supported as Convenience Methods (❌)
 
