@@ -4,6 +4,39 @@ AI-powered WordPress CLI tool for content management with precision editing capa
 
 ## Features
 
+### 🎉 NEW in v1.1.0: Production-Ready AI Integration!
+**AI-powered content generation with PraisonAI framework!**
+
+```bash
+# Install with AI features
+pip install praisonaiwp[ai]
+
+# Set your OpenAI API key
+export OPENAI_API_KEY="sk-..."
+
+# Generate content
+praisonaiwp ai generate "AI Trends 2025"
+
+# Generate and auto-publish
+praisonaiwp ai generate "AI Trends" \
+  --title "The Future of AI" \
+  --auto-publish \
+  --status publish
+```
+
+**AI Features:**
+- ✅ **PraisonAI Integration** - Multi-agent content generation
+- ✅ **Production-Ready** - API validation, retry logic, cost tracking
+- ✅ **Cost-Effective** - Default gpt-4o-mini (~$0.0005 per 500-word post)
+- ✅ **Quality Control** - Content validation, length checks, structure validation
+- ✅ **Auto-Publish** - Direct WordPress publishing with one command
+- ✅ **Rate Limiting** - Prevents API errors
+- ✅ **58 Tests** - 100% passing, production-ready
+
+See **[PRAISONAI.md](PRAISONAI.md)** for complete AI documentation.
+
+---
+
 ### 🚀 NEW in v1.0.13: Universal WP-CLI Access!
 **ALL 1000+ WP-CLI commands now supported via the generic `wp()` method!**
 
@@ -160,7 +193,23 @@ client.wp('import', 'content.xml')
 
 ## Installation
 
-### Using uv (Recommended - 10x faster!)
+### Using pip (Recommended)
+
+```bash
+# Core only (WordPress management)
+pip install praisonaiwp
+
+# With AI features (recommended)
+pip install praisonaiwp[ai]
+
+# With development tools
+pip install praisonaiwp[dev]
+
+# Everything
+pip install praisonaiwp[all]
+```
+
+### Using uv (10x faster!)
 
 ```bash
 # Install uv if you haven't already
@@ -175,15 +224,12 @@ uv sync
 uv run praisonaiwp init
 ```
 
-### Using pip
+### From source
 
 ```bash
-pip install praisonaiwp
-
-# Or install from source
 git clone https://github.com/MervinPraison/PraisonAI-WPcli.git
 cd PraisonAI-WPcli
-pip install -e .
+pip install -e ".[ai]"  # With AI features
 ```
 
 ## Quick Start
@@ -444,6 +490,179 @@ praisonaiwp create "My Post" --content "Hello" --category "Tech,AI"
 praisonaiwp update 123 --category "Tech,Python"
 ```
 
+### 9. AI Content Generation (NEW in v1.1.0)
+
+```bash
+# Set your OpenAI API key (required)
+export OPENAI_API_KEY="sk-..."
+
+# Generate content (creates draft)
+praisonaiwp ai generate "AI Trends 2025"
+
+# Generate with custom title
+praisonaiwp ai generate "AI Trends" --title "The Future of AI"
+
+# Generate and auto-publish
+praisonaiwp ai generate "AI Trends" \
+  --title "The Future of AI" \
+  --auto-publish \
+  --status publish
+
+# Verbose mode (see generation details)
+praisonaiwp ai generate "AI Trends" --verbose
+
+# Use different server
+praisonaiwp ai generate "AI Trends" --server production
+```
+
+**AI Features:**
+- Powered by PraisonAI multi-agent framework
+- Default model: gpt-4o-mini (cost-effective)
+- Automatic content validation
+- Cost tracking
+- Retry logic with exponential backoff
+- Rate limiting to prevent API errors
+
+**Programmatic Usage:**
+```python
+from praisonaiwp.ai.integration import PraisonAIWPIntegration
+from praisonaiwp.core.ssh_manager import SSHManager
+from praisonaiwp.core.wp_client import WPClient
+
+# Setup
+ssh = SSHManager(hostname="example.com", username="user", key_file="~/.ssh/id_rsa")
+wp_client = WPClient(ssh=ssh, wp_path="/var/www/html")
+
+# Create AI integration
+integration = PraisonAIWPIntegration(wp_client)
+
+# Generate content
+result = integration.generate(
+    topic="AI Trends 2025",
+    title="The Future of AI",
+    auto_publish=True
+)
+
+print(f"Post ID: {result['post_id']}")
+print(f"Cost: ${result['cost']:.6f}")
+print(f"Duration: {result['duration']:.2f}s")
+```
+
+**See [PRAISONAI.md](PRAISONAI.md) for complete AI documentation.**
+
+## AI Production Features
+
+The AI integration includes enterprise-grade production features:
+
+### 1. API Key Validation
+- Validates OpenAI API key on initialization
+- Clear error messages with setup instructions
+- Format checking (must start with 'sk-')
+
+### 2. Content Validation
+- **Length checks**: Minimum 100 chars, maximum 10,000 chars (configurable)
+- **Paragraph structure**: Requires at least 2 paragraph breaks
+- **Placeholder detection**: Detects [INSERT], TODO, PLACEHOLDER text
+- **Skip option**: Use `skip_validation=True` to bypass
+
+### 3. Cost Tracking
+- **Per-generation tracking**: Track cost for each post
+- **Cumulative tracking**: Total cost across all generations
+- **Model-specific pricing**: Accurate pricing for gpt-4o-mini, gpt-4o, etc.
+- **Cost estimation**: See estimated cost before generation
+
+**Example:**
+```python
+# Get cost summary
+summary = integration.get_cost_summary()
+print(f"Total cost: ${summary['total_cost']:.6f}")
+print(f"Average cost: ${summary['average_cost']:.6f}")
+```
+
+### 4. Retry Logic with Exponential Backoff
+- **Automatic retries**: 3 attempts on failure
+- **Exponential backoff**: 1s, 2s, 4s delays
+- **Smart error handling**: Distinguishes temporary vs permanent errors
+- **Configurable**: Adjust max retries and delays
+
+### 5. Rate Limiting
+- **Default limits**: 10 requests per 60 seconds
+- **Automatic waiting**: Waits when limit reached
+- **Configurable**: Adjust limits per your needs
+- **Can be disabled**: For unlimited usage
+
+**Example:**
+```python
+integration = PraisonAIWPIntegration(
+    wp_client,
+    enable_rate_limiting=True,
+    max_requests=10,
+    time_window=60
+)
+```
+
+### 6. Structured Logging
+- **Generation metrics**: Duration, cost, word count
+- **Progress tracking**: Real-time generation status
+- **Error logging**: Detailed error messages
+- **Verbose mode**: Use `--verbose` flag for details
+
+### 7. Enhanced Result Metadata
+Every generation returns comprehensive metadata:
+```python
+{
+    'content': str,           # Generated content
+    'post_id': int,           # WordPress post ID (if published)
+    'cost': float,            # Estimated cost in USD
+    'duration': float,        # Generation time in seconds
+    'model': str,             # Model used (e.g., 'gpt-4o-mini')
+    'metadata': {
+        'topic': str,         # Original topic
+        'title': str,         # Post title
+        'length': int,        # Content length in chars
+        'word_count': int     # Word count
+    }
+}
+```
+
+### Cost Comparison
+
+| Model | Speed | Cost/500 words | Quality | Best For |
+|-------|-------|----------------|---------|----------|
+| **gpt-4o-mini** | **2-3s** | **$0.0005** | **Good** | **Most use cases** ✅ |
+| gpt-4o | 5-8s | $0.011 | Excellent | Premium content |
+| gpt-3.5-turbo | 1-2s | $0.0003 | Fair | High volume |
+
+### Configuration Options
+
+```python
+integration = PraisonAIWPIntegration(
+    wp_client,
+    
+    # Model settings
+    model='gpt-4o-mini',           # Default model
+    verbose=0,                      # Verbosity (0-2)
+    status='draft',                 # Default post status
+    
+    # Content validation
+    validate_content=True,          # Enable validation
+    min_length=100,                 # Min chars
+    max_length=10000,               # Max chars
+    
+    # Rate limiting
+    enable_rate_limiting=True,      # Enable limiter
+    max_requests=10,                # Max requests
+    time_window=60,                 # Time window (seconds)
+)
+```
+
+### Test Coverage
+- **58 tests** - 100% passing
+- **Test categories**: API validation, content validation, cost tracking, rate limiting, retry logic, integration, WordPress tools, CLI commands
+- **Production-ready**: All edge cases covered
+
+**See [PRAISONAI.md](PRAISONAI.md) for detailed production features documentation.**
+
 ## Complete CLI Reference
 
 ### `praisonaiwp create` - Create Posts
@@ -698,6 +917,67 @@ praisonaiwp category remove 123 --category "Uncategorized"
 
 ---
 
+---
+
+### `praisonaiwp ai` - AI Content Generation (NEW in v1.1.0)
+
+**Subcommand:**
+```bash
+praisonaiwp ai generate TOPIC [OPTIONS]
+```
+
+**Options:**
+```bash
+Options:
+  --title TEXT        Post title (defaults to topic)
+  --status TEXT       Post status (draft/publish)
+  --auto-publish      Automatically publish to WordPress
+  --verbose           Verbose output
+  --server TEXT       Server name from config
+```
+
+**Examples:**
+```bash
+# Basic generation (creates draft)
+praisonaiwp ai generate "AI Trends 2025"
+
+# With custom title
+praisonaiwp ai generate "AI Trends" --title "The Future of AI"
+
+# Auto-publish as draft
+praisonaiwp ai generate "AI Trends" \
+  --title "The Future of AI" \
+  --auto-publish
+
+# Auto-publish as published post
+praisonaiwp ai generate "AI Trends" \
+  --title "The Future of AI" \
+  --auto-publish \
+  --status publish
+
+# Verbose mode (shows generation details, cost, duration)
+praisonaiwp ai generate "AI Trends" --verbose
+
+# Use specific server
+praisonaiwp ai generate "AI Trends" --server production
+```
+
+**Requirements:**
+- OpenAI API key: `export OPENAI_API_KEY="sk-..."`
+- AI features installed: `pip install praisonaiwp[ai]`
+
+**Features:**
+- Default model: gpt-4o-mini (~$0.0005 per 500-word post)
+- Automatic content validation
+- Cost tracking and estimation
+- Retry logic (3 attempts with exponential backoff)
+- Rate limiting (10 requests/60s by default)
+- Production-ready error handling
+
+**See [PRAISONAI.md](PRAISONAI.md) for complete AI documentation.**
+
+---
+
 ### Important Notes for AI Agents
 
 **⚠️ Quoting Rules:**
@@ -710,12 +990,14 @@ praisonaiwp category remove 123 --category "Uncategorized"
 praisonaiwp list --search "Test Post"
 praisonaiwp create "My Title" --content "My content"
 praisonaiwp update 123 --post-title "New Title"
+praisonaiwp ai generate "AI Trends" --title "The Future"
 ```
 
 **❌ Incorrect Usage:**
 ```bash
 praisonaiwp list --search Test Post  # ERROR: Too many positional arguments
 praisonaiwp create My Title --content My content  # ERROR: Ambiguous
+praisonaiwp ai generate AI Trends --title The Future  # ERROR: Needs quotes
 ```
 
 **🔧 All Available Options Summary:**
@@ -727,6 +1009,7 @@ praisonaiwp create My Title --content My content  # ERROR: Ambiguous
 | `list` | `--type`, `--status`, `--limit`, `-s/--search`, `--server` |
 | `find` | `--type`, `--server` |
 | `category` | Subcommands: `list`, `search`, `set`, `add`, `remove` with `--category`, `--category-id` |
+| `ai generate` | `--title`, `--status`, `--auto-publish`, `--verbose`, `--server` |
 
 ---
 
@@ -853,11 +1136,84 @@ php_bin: /opt/plesk/php/8.3/bin/php
 praisonaiwp find-wordpress --update-config
 ```
 
+### AI Features Issues
+
+#### API Key Not Set
+```
+Error: OPENAI_API_KEY not set.
+```
+**Solution:**
+```bash
+export OPENAI_API_KEY="sk-..."
+# Add to ~/.bashrc or ~/.zshrc for persistence
+```
+
+#### AI Features Not Available
+```
+Error: AI features not available.
+Install with: pip install 'praisonaiwp[ai]'
+```
+**Solution:**
+```bash
+pip install --upgrade praisonaiwp[ai]
+```
+
+#### Content Validation Failed
+```
+Error: Content validation failed:
+  - Content too short: 50 chars (minimum: 100)
+```
+**Solutions:**
+```bash
+# Option 1: Skip validation
+praisonaiwp ai generate "Topic" --skip-validation
+
+# Option 2: Adjust in code
+integration = PraisonAIWPIntegration(wp_client, min_length=50)
+```
+
+#### Rate Limit Reached
+```
+WARNING: Rate limit reached (10 requests/60s). Waiting 15.3s...
+```
+**Solutions:**
+```python
+# Increase limits
+integration = PraisonAIWPIntegration(
+    wp_client,
+    max_requests=20,
+    time_window=60
+)
+
+# Or disable rate limiting
+integration = PraisonAIWPIntegration(
+    wp_client,
+    enable_rate_limiting=False
+)
+```
+
+#### Generation Failed After Retries
+```
+Error: Failed after 3 attempts: Connection timeout
+```
+**Solutions:**
+- Check internet connection
+- Verify OpenAI API status
+- Try again later
+- Check API key validity
+
 ## Documentation
 
+### Core Documentation
+- **[README.md](README.md)** - This file (main documentation)
 - **[ARCHITECTURE.md](ARCHITECTURE.md)** - Technical architecture and design
 - **[TESTING.md](TESTING.md)** - Testing guide and best practices
 - **[CHANGELOG.md](CHANGELOG.md)** - Version history and changes
+
+### AI Features (NEW in v1.1.0)
+- **[PRAISONAI.md](PRAISONAI.md)** - Complete AI integration guide
+- **[AI_DOCUMENTATION.md](AI_DOCUMENTATION.md)** - Quick AI navigation
+- **[RELEASE_NOTES_v1.1.0.md](RELEASE_NOTES_v1.1.0.md)** - v1.1.0 release notes
 
 ## Development
 

@@ -11,6 +11,13 @@ from praisonaiwp.cli.commands.category import category_command
 from praisonaiwp.cli.commands.install_wp_cli import install_wp_cli
 from praisonaiwp.cli.commands.find_wordpress import find_wordpress
 
+# Try to import AI commands (optional)
+try:
+    from praisonaiwp.cli.commands.ai_commands import ai
+    AI_COMMANDS_AVAILABLE = True
+except ImportError:
+    AI_COMMANDS_AVAILABLE = False
+
 
 @click.group()
 @click.version_option(version=__version__)
@@ -49,6 +56,10 @@ cli.add_command(update_command, name='update')
 cli.add_command(find_command, name='find')
 cli.add_command(list_command, name='list')
 cli.add_command(category_command, name='category')
+
+# Register AI commands if available
+if AI_COMMANDS_AVAILABLE:
+    cli.add_command(ai, name='ai')
 
 
 if __name__ == '__main__':

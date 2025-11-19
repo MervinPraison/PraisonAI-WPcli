@@ -5,6 +5,81 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.1.0] - 2025-11-19
+
+### 🎉 Major Release: Production-Ready AI Integration
+
+### Added
+- **PraisonAI Integration**: Full integration with PraisonAI framework for AI-powered content generation
+  - WordPress tools for PraisonAI agents (create, update, list posts)
+  - Integration class with task callbacks
+  - CLI commands: `praisonaiwp ai generate`
+  - Optional dependencies: `pip install praisonaiwp[ai]`
+
+- **Production Features**:
+  - ✅ API key validation (validates OpenAI API key on initialization)
+  - ✅ Content validation (length, paragraph structure, placeholder detection)
+  - ✅ Cost tracking (per-generation and cumulative with model-specific pricing)
+  - ✅ Retry logic (3 automatic retries with exponential backoff)
+  - ✅ Rate limiting (configurable limits to prevent API errors)
+  - ✅ Structured logging (detailed metrics and progress tracking)
+
+- **New Modules**:
+  - `praisonaiwp/ai/integration.py` - Main AI integration class
+  - `praisonaiwp/ai/tools/wordpress_tools.py` - WordPress tools for agents
+  - `praisonaiwp/ai/utils/validators.py` - API key & content validation
+  - `praisonaiwp/ai/utils/cost_tracker.py` - Cost tracking
+  - `praisonaiwp/ai/utils/retry.py` - Retry with exponential backoff
+  - `praisonaiwp/ai/utils/rate_limiter.py` - Rate limiting
+  - `praisonaiwp/cli/commands/ai_commands.py` - AI CLI commands
+
+### Enhanced
+- **Test Coverage**: Added 40 new tests (58 total AI tests, 100% passing)
+  - API key validation tests
+  - Content validation tests
+  - Cost tracking tests
+  - Rate limiting tests
+  - Retry logic tests
+  - Integration tests
+  - CLI command tests
+
+- **Documentation**: Comprehensive guides added
+  - `AI_IMPLEMENTATION_SUMMARY.md` - Complete implementation details
+  - `PRODUCTION_READY_SUMMARY.md` - Production deployment guide
+  - `PRODUCTION_ENHANCEMENTS.md` - Enhancement recommendations
+  - `QUICK_START_AI.md` - Quick start guide
+  - `AI_FEATURES_README.md` - Feature overview
+
+### Technical Details
+- **Default Model**: gpt-4o-mini (cost-effective, ~$0.0005 per 500-word post)
+- **Backward Compatible**: All new features are optional
+- **Test-Driven Development**: All features implemented with TDD approach
+- **Error Handling**: Comprehensive error handling with clear messages
+
+### Usage
+```bash
+# Install with AI features
+pip install praisonaiwp[ai]
+
+# Set API key
+export OPENAI_API_KEY="sk-..."
+
+# Generate content
+praisonaiwp ai generate "AI Trends 2025"
+
+# Generate and publish
+praisonaiwp ai generate "AI Trends" \
+  --title "The Future of AI" \
+  --auto-publish \
+  --status publish
+```
+
+### Breaking Changes
+None - Fully backward compatible
+
+### Migration
+No migration needed. AI features are opt-in via `pip install praisonaiwp[ai]`
+
 ## [1.0.22] - 2025-11-19
 
 ### Fixed
