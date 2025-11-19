@@ -929,11 +929,20 @@ praisonaiwp ai generate TOPIC [OPTIONS]
 **Options:**
 ```bash
 Options:
-  --title TEXT        Post title (defaults to topic)
-  --status TEXT       Post status (draft/publish)
-  --auto-publish      Automatically publish to WordPress
-  --verbose           Verbose output
-  --server TEXT       Server name from config
+  --title TEXT           Post title (defaults to topic)
+  --status TEXT          Post status (draft/publish/private)
+  --type TEXT            Post type (post, page)
+  --category TEXT        Comma-separated category names or slugs
+  --category-id TEXT     Comma-separated category IDs
+  --author TEXT          Post author (user ID or login)
+  --excerpt TEXT         Post excerpt
+  --date TEXT            Post date (YYYY-MM-DD HH:MM:SS)
+  --tags TEXT            Comma-separated tag names or IDs
+  --meta TEXT            Post meta in JSON format: {"key":"value"}
+  --comment-status TEXT  Comment status (open, closed)
+  --auto-publish         Automatically publish to WordPress
+  --verbose              Verbose output
+  --server TEXT          Server name from config
 ```
 
 **Examples:**
@@ -954,6 +963,38 @@ praisonaiwp ai generate "AI Trends" \
   --title "The Future of AI" \
   --auto-publish \
   --status publish
+
+# With categories and tags
+praisonaiwp ai generate "AI Trends" \
+  --category "Technology,AI" \
+  --tags "artificial-intelligence,machine-learning" \
+  --auto-publish
+
+# With author and excerpt
+praisonaiwp ai generate "AI Trends" \
+  --author praison \
+  --excerpt "Discover the latest AI trends" \
+  --auto-publish
+
+# With custom meta fields
+praisonaiwp ai generate "AI Trends" \
+  --meta '{"featured":"yes","views":"0"}' \
+  --auto-publish
+
+# All options combined
+praisonaiwp ai generate "AI Trends 2025" \
+  --title "The Future of AI" \
+  --status publish \
+  --type post \
+  --category "Technology,AI" \
+  --author praison \
+  --excerpt "Comprehensive AI trends analysis" \
+  --date "2024-01-15 10:00:00" \
+  --tags "ai,tech,trends" \
+  --meta '{"featured":"yes"}' \
+  --comment-status open \
+  --auto-publish \
+  --verbose
 
 # Verbose mode (shows generation details, cost, duration)
 praisonaiwp ai generate "AI Trends" --verbose
@@ -1009,7 +1050,7 @@ praisonaiwp ai generate AI Trends --title The Future  # ERROR: Needs quotes
 | `list` | `--type`, `--status`, `--limit`, `-s/--search`, `--server` |
 | `find` | `--type`, `--server` |
 | `category` | Subcommands: `list`, `search`, `set`, `add`, `remove` with `--category`, `--category-id` |
-| `ai generate` | `--title`, `--status`, `--auto-publish`, `--verbose`, `--server` |
+| `ai generate` | `--title`, `--status`, `--type`, `--category`, `--category-id`, `--author`, `--excerpt`, `--date`, `--tags`, `--meta`, `--comment-status`, `--auto-publish`, `--verbose`, `--server` |
 
 ---
 

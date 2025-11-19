@@ -80,6 +80,7 @@ class PraisonAIWPIntegration:
 
         # State for callbacks
         self.current_title = None
+        self.current_post_options = {}
         self.last_post_id = None
         self.last_generation_cost = None
 
@@ -92,11 +93,62 @@ class PraisonAIWPIntegration:
         Returns:
             dict: Post ID and content
         """
-        post_id = self.wp_client.create_post(
-            post_title=self.current_title,
-            post_content=task_output.raw,
-            post_status=self.config.get('status', 'draft')
-        )
+        import json
+
+        # Prepare post data
+        post_data = {
+            'post_title': self.current_title,
+            'post_content': task_output.raw,
+            'post_status': self.config.get('status', 'draft')
+        }
+
+        # Add optional fields
+        if self.current_post_options.get('post_type'):
+            post_data['post_type'] = self.current_post_options['post_type']
+        if self.current_post_options.get('author'):
+            post_data['post_author'] = self.current_post_options['author']
+        if self.current_post_options.get('excerpt'):
+            post_data['post_excerpt'] = self.current_post_options['excerpt']
+        if self.current_post_options.get('date'):
+            post_data['post_date'] = self.current_post_options['date']
+        if self.current_post_options.get('comment_status'):
+            post_data['comment_status'] = self.current_post_options['comment_status']
+
+        # Create post
+        post_id = self.wp_client.create_post(**post_data)
+
+        # Set categories if provided
+        category = self.current_post_options.get('category')
+        category_id = self.current_post_options.get('category_id')
+        if category or category_id:
+            try:
+                if category_id:
+                    self.wp_client.set_post_categories(post_id, category_id)
+                else:
+                    self.wp_client.set_post_categories(post_id, category)
+                logger.info(f"Set categories: {category or category_id}")
+            except Exception as e:
+                logger.warning(f"Failed to set categories: {e}")
+
+        # Set tags if provided
+        if self.current_post_options.get('tags'):
+            try:
+                tags = self.current_post_options['tags']
+                # Use wp-cli to set tags
+                self.wp_client.wp('post', 'term', 'set', str(post_id), 'post_tag', tags.replace(',', ' '))
+                logger.info(f"Set tags: {tags}")
+            except Exception as e:
+                logger.warning(f"Failed to set tags: {e}")
+
+        # Set meta if provided
+        if self.current_post_options.get('meta'):
+            try:
+                meta_data = json.loads(self.current_post_options['meta'])
+                for key, value in meta_data.items():
+                    self.wp_client.set_post_meta(post_id, key, value)
+                logger.info(f"Set meta fields: {list(meta_data.keys())}")
+            except Exception as e:
+                logger.warning(f"Failed to set meta: {e}")
 
         self.last_post_id = post_id
 
@@ -131,6 +183,15 @@ class PraisonAIWPIntegration:
             title: Post title (optional, defaults to topic)
             **kwargs: Additional options
                 - auto_publish: Auto-publish after generation (default: False)
+                - post_type: Post type (post, page) (default: 'post')
+                - category: Comma-separated category names (default: None)
+                - category_id: Comma-separated category IDs (default: None)
+                - author: Post author (user ID or login) (default: None)
+                - excerpt: Post excerpt (default: None)
+                - date: Post date (YYYY-MM-DD HH:MM:SS) (default: None)
+                - tags: Comma-separated tag names (default: None)
+                - meta: Post meta in JSON format (default: None)
+                - comment_status: Comment status (open, closed) (default: None)
                 - use_tools: Give agent WordPress tools (default: False)
                 - model: Override default model
                 - skip_validation: Skip content validation (default: False)
@@ -143,6 +204,17 @@ class PraisonAIWPIntegration:
             self.rate_limiter.wait_if_needed()
 
         self.current_title = title or topic
+        self.current_post_options = {
+            'post_type': kwargs.get('post_type'),
+            'category': kwargs.get('category'),
+            'category_id': kwargs.get('category_id'),
+            'author': kwargs.get('author'),
+            'excerpt': kwargs.get('excerpt'),
+            'date': kwargs.get('date'),
+            'tags': kwargs.get('tags'),
+            'meta': kwargs.get('meta'),
+            'comment_status': kwargs.get('comment_status')
+        }
         self.last_post_id = None
         start_time = time.time()
 

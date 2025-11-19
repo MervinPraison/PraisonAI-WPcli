@@ -15,17 +15,29 @@ def ai():
 @ai.command()
 @click.argument('topic')
 @click.option('--title', help='Post title (defaults to topic)')
-@click.option('--status', default='draft', help='Post status (draft/publish)')
+@click.option('--status', default='draft', help='Post status (draft/publish/private)')
+@click.option('--type', 'post_type', default='post', help='Post type (post, page)')
+@click.option('--category', help='Comma-separated category names or slugs')
+@click.option('--category-id', help='Comma-separated category IDs')
+@click.option('--author', help='Post author (user ID or login)')
+@click.option('--excerpt', help='Post excerpt')
+@click.option('--date', help='Post date (YYYY-MM-DD HH:MM:SS)')
+@click.option('--tags', help='Comma-separated tag names or IDs')
+@click.option('--meta', help='Post meta in JSON format: {"key":"value"}')
+@click.option('--comment-status', help='Comment status (open, closed)')
 @click.option('--auto-publish', is_flag=True, help='Automatically publish to WordPress')
 @click.option('--verbose', is_flag=True, help='Verbose output')
 @click.option('--server', help='Server name from config')
-def generate(topic, title, status, auto_publish, verbose, server):
+def generate(topic, title, status, post_type, category, category_id, author, excerpt,
+             date, tags, meta, comment_status, auto_publish, verbose, server):
     """Generate content using AI
 
     Examples:
         praisonaiwp ai generate "AI Trends 2025"
         praisonaiwp ai generate "AI Trends" --title "The Future of AI" --auto-publish
         praisonaiwp ai generate "AI" --status publish --auto-publish --verbose
+        praisonaiwp ai generate "AI" --category "Technology,AI" --auto-publish
+        praisonaiwp ai generate "AI" --author praison --tags "ai,tech" --auto-publish
     """
     # Check if AI is available
     if not AI_AVAILABLE:
@@ -79,14 +91,30 @@ def generate(topic, title, status, auto_publish, verbose, server):
         # Show progress
         click.echo(f"Generating content about: {topic}")
         if verbose:
-            click.echo(f"Model: gpt-4o-mini")
+            click.echo("Model: gpt-4o-mini")
             click.echo(f"Status: {status}")
+            click.echo(f"Type: {post_type}")
+            if category or category_id:
+                click.echo(f"Categories: {category or category_id}")
+            if author:
+                click.echo(f"Author: {author}")
+            if tags:
+                click.echo(f"Tags: {tags}")
 
         # Generate content
         result = integration.generate(
             topic=topic,
             title=title,
-            auto_publish=auto_publish
+            auto_publish=auto_publish,
+            post_type=post_type,
+            category=category,
+            category_id=category_id,
+            author=author,
+            excerpt=excerpt,
+            date=date,
+            tags=tags,
+            meta=meta,
+            comment_status=comment_status
         )
 
         # Show result
@@ -113,4 +141,4 @@ def generate(topic, title, status, auto_publish, verbose, server):
         if verbose:
             import traceback
             traceback.print_exc()
-        raise click.Abort()
+        raise click.Abort() from e
