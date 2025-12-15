@@ -45,13 +45,11 @@ def cli():
         <!-- /wp:paragraph -->
     
     \b
-    Heading (h2):
+    Heading (h2, h3, h4):
         <!-- wp:heading -->
         <h2 class="wp-block-heading">Title</h2>
         <!-- /wp:heading -->
-    
-    \b
-    Heading (h3):
+        
         <!-- wp:heading {"level":3} -->
         <h3 class="wp-block-heading">Subtitle</h3>
         <!-- /wp:heading -->
@@ -70,32 +68,75 @@ def cli():
         <!-- /wp:table -->
     
     \b
-    Separator (horizontal rule):
+    Separator:
         <!-- wp:separator -->
         <hr class="wp-block-separator has-alpha-channel-opacity"/>
         <!-- /wp:separator -->
     
     \b
-    List:
+    List (unordered):
         <!-- wp:list -->
         <ul class="wp-block-list"><li>Item 1</li><li>Item 2</li></ul>
         <!-- /wp:list -->
     
     \b
+    List (ordered):
+        <!-- wp:list {"ordered":true} -->
+        <ol class="wp-block-list"><li>First</li><li>Second</li></ol>
+        <!-- /wp:list -->
+    
+    \b
+    Image:
+        <!-- wp:image {"id":123} -->
+        <figure class="wp-block-image"><img src="URL" alt="Alt text"/></figure>
+        <!-- /wp:image -->
+    
+    \b
+    Quote:
+        <!-- wp:quote -->
+        <blockquote class="wp-block-quote"><p>Quote text</p><cite>Author</cite></blockquote>
+        <!-- /wp:quote -->
+    
+    \b
+    Columns (2 columns):
+        <!-- wp:columns -->
+        <div class="wp-block-columns">
+        <!-- wp:column -->
+        <div class="wp-block-column"><!-- wp:paragraph --><p>Col 1</p><!-- /wp:paragraph --></div>
+        <!-- /wp:column -->
+        <!-- wp:column -->
+        <div class="wp-block-column"><!-- wp:paragraph --><p>Col 2</p><!-- /wp:paragraph --></div>
+        <!-- /wp:column -->
+        </div>
+        <!-- /wp:columns -->
+    
+    \b
+    Button:
+        <!-- wp:buttons -->
+        <div class="wp-block-buttons">
+        <!-- wp:button -->
+        <div class="wp-block-button"><a class="wp-block-button__link">Click Me</a></div>
+        <!-- /wp:button -->
+        </div>
+        <!-- /wp:buttons -->
+    
+    \b
+    OTHER BLOCKS (same pattern <!-- wp:NAME -->...<!-- /wp:NAME -->):
+    preformatted, pullquote, verse, audio, video, file, gallery, cover,
+    media-text, group, spacer, embed, html, shortcode, details
+    
+    \b
     EXAMPLES:
     ---------
     
-        # Initialize configuration
-        praisonaiwp init
-        
         # Create post with HTML (auto-converts to blocks)
         praisonaiwp create "My Post" --content "<h2>Title</h2><p>Content</p>"
         
         # Create post with raw Gutenberg blocks
         praisonaiwp create "My Post" --no-block-conversion --content "<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->"
         
-        # Update post
-        praisonaiwp update 123 "old" "new" --line 10
+        # Update post content
+        praisonaiwp update 123 --post-content "<p>New content</p>"
         
         # List posts
         praisonaiwp list --type page
