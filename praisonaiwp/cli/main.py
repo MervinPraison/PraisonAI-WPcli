@@ -29,6 +29,11 @@ def cli():
     Simple, powerful WordPress automation via WP-CLI over SSH.
     
     \b
+    PREFERRED CONTENT STRUCTURE:
+    ----------------------------
+    WordPress-based HTML structure is preferred for best compatibility.
+    
+    \b
     CONTENT FORMAT:
     ---------------
     Content should be HTML. By default, it auto-converts to Gutenberg blocks.
