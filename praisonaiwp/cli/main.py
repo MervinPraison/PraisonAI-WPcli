@@ -19,6 +19,13 @@ try:
 except ImportError:
     AI_COMMANDS_AVAILABLE = False
 
+# Try to import MCP commands (optional)
+try:
+    from praisonaiwp.cli.commands.mcp_commands import mcp
+    MCP_COMMANDS_AVAILABLE = True
+except ImportError:
+    MCP_COMMANDS_AVAILABLE = False
+
 
 @click.group()
 @click.version_option(version=__version__)
@@ -163,6 +170,10 @@ cli.add_command(media_command, name='media')
 # Register AI commands if available
 if AI_COMMANDS_AVAILABLE:
     cli.add_command(ai, name='ai')
+
+# Register MCP commands if available
+if MCP_COMMANDS_AVAILABLE:
+    cli.add_command(mcp, name='mcp')
 
 
 if __name__ == '__main__':

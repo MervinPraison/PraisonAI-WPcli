@@ -37,6 +37,56 @@ See **[PRAISONAI.md](PRAISONAI.md)** for complete AI documentation.
 
 ---
 
+### 🔌 NEW in v1.3.0: MCP (Model Context Protocol) Support!
+**Connect PraisonAIWP to Claude Desktop, Cursor, VS Code, and other MCP clients!**
+
+```bash
+# Install with MCP support
+pip install praisonaiwp[mcp]
+
+# View available tools
+praisonaiwp mcp info
+
+# Run MCP server
+praisonaiwp mcp run
+
+# Install in Claude Desktop
+praisonaiwp mcp install
+```
+
+**MCP Features:**
+- ✅ **23 WordPress Tools** - Create, update, delete posts, manage users, plugins, themes
+- ✅ **8 Resources** - Read-only access to WordPress data
+- ✅ **4 Prompt Templates** - Blog post creation, SEO optimization, bulk updates
+- ✅ **Multiple Transports** - stdio (default) and HTTP
+- ✅ **Claude Desktop Integration** - One-command installation
+- ✅ **57 Tests** - 100% passing, production-ready
+
+**Available Tools:**
+| Category | Tools |
+|----------|-------|
+| **Posts** | `create_post`, `update_post`, `delete_post`, `get_post`, `list_posts`, `find_text` |
+| **Categories** | `list_categories`, `set_post_categories`, `create_term` |
+| **Users** | `list_users`, `create_user`, `get_user` |
+| **Plugins** | `list_plugins`, `activate_plugin`, `deactivate_plugin` |
+| **Themes** | `list_themes`, `activate_theme` |
+| **Media** | `import_media` |
+| **System** | `flush_cache`, `get_core_version`, `db_query`, `search_replace`, `wp_cli` |
+
+**Claude Desktop Configuration:**
+```json
+{
+  "mcpServers": {
+    "praisonaiwp": {
+      "command": "praisonaiwp",
+      "args": ["mcp", "run"]
+    }
+  }
+}
+```
+
+---
+
 ### 🚀 NEW in v1.0.13: Universal WP-CLI Access!
 **ALL 1000+ WP-CLI commands now supported via the generic `wp()` method!**
 
@@ -202,6 +252,9 @@ pip install praisonaiwp
 
 # With AI features (recommended)
 pip install praisonaiwp[ai]
+
+# With MCP support (for Claude Desktop, Cursor, etc.)
+pip install praisonaiwp[mcp]
 
 # With development tools
 pip install praisonaiwp[dev]
@@ -1163,6 +1216,117 @@ praisonaiwp ai generate "AI Trends" --server production
 
 ---
 
+### `praisonaiwp mcp` - MCP Server (NEW in v1.3.0)
+
+**Subcommands:**
+```bash
+praisonaiwp mcp run      # Run MCP server
+praisonaiwp mcp install  # Install in Claude Desktop
+praisonaiwp mcp dev      # Development mode with inspector
+praisonaiwp mcp info     # Show available tools/resources
+```
+
+**Run Options:**
+```bash
+Options:
+  -t, --transport [stdio|streamable-http]  Transport type (default: stdio)
+  --host TEXT                              Host for HTTP transport (default: localhost)
+  --port INTEGER                           Port for HTTP transport (default: 8000)
+  -s, --server TEXT                        WordPress server name from config
+```
+
+**Examples:**
+```bash
+# Run with default stdio transport
+praisonaiwp mcp run
+
+# Run with HTTP transport
+praisonaiwp mcp run -t streamable-http --port 8080
+
+# Use specific WordPress server
+praisonaiwp mcp run --server production
+
+# Install in Claude Desktop
+praisonaiwp mcp install
+praisonaiwp mcp install --name "My WordPress"
+
+# Development mode (opens MCP Inspector)
+praisonaiwp mcp dev
+
+# View all available tools and resources
+praisonaiwp mcp info
+```
+
+**Available MCP Tools:**
+| Tool | Description |
+|------|-------------|
+| `create_post` | Create a new WordPress post |
+| `update_post` | Update an existing post |
+| `delete_post` | Delete a post |
+| `get_post` | Get post details |
+| `list_posts` | List posts with filters |
+| `find_text` | Find text in posts |
+| `list_categories` | List all categories |
+| `set_post_categories` | Set post categories |
+| `create_term` | Create a new term |
+| `list_users` | List WordPress users |
+| `create_user` | Create a new user |
+| `get_user` | Get user details |
+| `list_plugins` | List installed plugins |
+| `activate_plugin` | Activate a plugin |
+| `deactivate_plugin` | Deactivate a plugin |
+| `list_themes` | List installed themes |
+| `activate_theme` | Activate a theme |
+| `import_media` | Import media file |
+| `flush_cache` | Flush WordPress cache |
+| `get_core_version` | Get WordPress version |
+| `db_query` | Execute database query |
+| `search_replace` | Search and replace in database |
+| `wp_cli` | Execute any WP-CLI command |
+
+**Available MCP Resources:**
+| Resource URI | Description |
+|--------------|-------------|
+| `wordpress://info` | WordPress installation info |
+| `wordpress://posts/{post_id}` | Get specific post content |
+| `wordpress://posts` | List of recent posts |
+| `wordpress://categories` | All categories |
+| `wordpress://users` | All users |
+| `wordpress://plugins` | Installed plugins |
+| `wordpress://themes` | Installed themes |
+| `wordpress://config` | Server configuration |
+
+**Available MCP Prompts:**
+| Prompt | Description |
+|--------|-------------|
+| `create_blog_post_prompt` | Template for creating blog posts |
+| `update_content_prompt` | Template for updating content |
+| `bulk_update_prompt` | Template for bulk operations |
+| `seo_optimize_prompt` | Template for SEO optimization |
+
+**Claude Desktop Configuration:**
+
+Add to `~/Library/Application Support/Claude/claude_desktop_config.json`:
+```json
+{
+  "mcpServers": {
+    "praisonaiwp": {
+      "command": "praisonaiwp",
+      "args": ["mcp", "run"],
+      "env": {
+        "PRAISONAIWP_SERVER": "production"
+      }
+    }
+  }
+}
+```
+
+**Requirements:**
+- MCP SDK installed: `pip install praisonaiwp[mcp]`
+- WordPress server configured: `praisonaiwp init`
+
+---
+
 ### Important Notes for AI Agents
 
 **⚠️ Quoting Rules:**
@@ -1196,6 +1360,10 @@ praisonaiwp ai generate AI Trends --title The Future  # ERROR: Needs quotes
 | `category` | Subcommands: `list`, `search`, `set`, `add`, `remove` with `--category`, `--category-id` |
 | `media` | `--post-id`, `--title`, `--caption`, `--alt`, `--desc`, `--server` |
 | `ai generate` | `--title`, `--status`, `--type`, `--category`, `--category-id`, `--author`, `--excerpt`, `--date`, `--tags`, `--meta`, `--comment-status`, `--auto-publish`, `--verbose`, `--server` |
+| `mcp run` | `-t/--transport`, `--host`, `--port`, `-s/--server` |
+| `mcp install` | `-n/--name`, `-s/--server` |
+| `mcp dev` | `-s/--server` |
+| `mcp info` | (no options) |
 
 ---
 
