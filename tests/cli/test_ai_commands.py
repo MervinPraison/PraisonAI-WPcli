@@ -40,10 +40,8 @@ class TestAICommands:
     @patch('praisonaiwp.cli.commands.ai_commands.AI_AVAILABLE', True)
     @patch('praisonaiwp.cli.commands.ai_commands.Config')
     @patch('praisonaiwp.cli.commands.ai_commands.SSHManager')
-    @patch('praisonaiwp.ai.integration.PraisonAIWPIntegration')
     def test_ai_generate_basic(
         self,
-        mock_integration_class,
         mock_ssh_manager_class,
         mock_config_class,
         runner,
@@ -60,11 +58,11 @@ class TestAICommands:
             'content': 'Generated content about AI',
             'post_id': None
         })
-        mock_integration_class.return_value = mock_integration
 
-        # Run command
-        with patch('praisonaiwp.cli.commands.ai_commands.WPClient'):
-            result = runner.invoke(ai, ['generate', 'AI Trends'])
+        # Run command - patch where it's imported (inside the function)
+        with patch('praisonaiwp.ai.integration.PraisonAIWPIntegration', return_value=mock_integration):
+            with patch('praisonaiwp.core.wp_client.WPClient'):
+                result = runner.invoke(ai, ['generate', 'AI Trends'])
 
         # Verify
         assert result.exit_code == 0
