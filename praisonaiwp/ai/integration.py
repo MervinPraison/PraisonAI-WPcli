@@ -1,7 +1,7 @@
 """PraisonAI WordPress Integration"""
 import logging
 import time
-from typing import Any, Dict, Optional, List
+from typing import Any, Dict, List, Optional
 
 from praisonaiwp.ai import Agent, PraisonAIAgents, Task, check_ai_available
 from praisonaiwp.ai.tools.wordpress_tools import WordPressTools
