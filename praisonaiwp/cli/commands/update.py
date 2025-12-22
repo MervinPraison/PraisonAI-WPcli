@@ -59,7 +59,7 @@ def _parse_category_input(category_str, category_id_str, wp):
 @click.option('--preview', is_flag=True, help='Preview changes without applying')
 @click.option('--category', help='Comma-separated category names/slugs')
 @click.option('--category-id', help='Comma-separated category IDs')
-@click.option('--post-content', help='Replace entire post content')
+@click.option('--post-content', help='Replace entire post content (Gutenberg blocks preferred)')
 @click.option('--post-title', help='Update post title')
 @click.option('--post-status', help='Update post status (publish, draft, private)')
 @click.option('--post-excerpt', help='Update post excerpt')
@@ -78,8 +78,9 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
 
     \b
     CONTENT FORMAT:
-    Content should be HTML. By default, it auto-converts to Gutenberg blocks.
-    Use --no-block-conversion to send raw Gutenberg block markup directly.
+    Gutenberg blocks are the DEFAULT and PREFERRED format.
+    HTML content is automatically converted to Gutenberg blocks.
+    Use --no-block-conversion only if you're providing raw Gutenberg block markup.
 
     \b
     EXAMPLES:
@@ -90,17 +91,17 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
         # Update specific line
         praisonaiwp update 123 "old text" "new text" --line 10
 
-        # Replace entire content with HTML
-        praisonaiwp update 123 --post-content "<h2>New</h2><p>Content</p>"
+        # Replace entire content with Gutenberg blocks (PREFERRED)
+        praisonaiwp update 123 --post-content "<!-- wp:paragraph --><p>New Content</p><!-- /wp:paragraph -->"
 
-        # Replace with raw Gutenberg blocks
-        praisonaiwp update 123 --no-block-conversion --post-content "<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->"
+        # Replace with HTML (auto-converts to Gutenberg blocks)
+        praisonaiwp update 123 --post-content "<h2>New</h2><p>Content</p>"
 
         # Update categories only
         praisonaiwp update 123 --category "RAG,AI"
 
     \b
-    GUTENBERG BLOCKS (use with --no-block-conversion):
+    GUTENBERG BLOCK EXAMPLES (default format):
 
     \b
         <!-- wp:paragraph --><p>Text</p><!-- /wp:paragraph -->

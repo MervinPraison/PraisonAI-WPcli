@@ -56,7 +56,7 @@ def _parse_category_input(category_str, category_id_str, wp):
 
 @click.command()
 @click.argument('title_or_file', required=False)
-@click.option('--content', help='Post content (HTML format, auto-converts to Gutenberg blocks)')
+@click.option('--content', help='Post content (Gutenberg blocks format preferred, HTML auto-converts)')
 @click.option('--status', default='publish', help='Post status (publish, draft, private)')
 @click.option('--type', 'post_type', default='post', help='Post type (post, page)')
 @click.option('--category', help='Comma-separated category names/slugs')
@@ -76,26 +76,30 @@ def create_command(title_or_file, content, status, post_type, category, category
 
     \b
     CONTENT FORMAT:
-    Content should be HTML. By default, it auto-converts to Gutenberg blocks.
-    Use --no-block-conversion to send raw Gutenberg block markup directly.
+    Gutenberg blocks are the DEFAULT and PREFERRED format.
+    HTML content is automatically converted to Gutenberg blocks.
+    Use --no-block-conversion only if you're providing raw Gutenberg block markup.
 
     \b
     EXAMPLES:
 
-        # Single post with HTML (auto-converts to blocks)
+        # Gutenberg blocks (PREFERRED - default format)
+        praisonaiwp create "My Post" --content "<!-- wp:paragraph --><p>Hello World</p><!-- /wp:paragraph -->"
+
+        # HTML (auto-converts to Gutenberg blocks)
         praisonaiwp create "My Post" --content "<h2>Title</h2><p>Content</p>"
 
         # With categories
-        praisonaiwp create "My Post" --content "<p>Hello</p>" --category "RAG,AI"
+        praisonaiwp create "My Post" --content "<!-- wp:paragraph --><p>Hello</p><!-- /wp:paragraph -->" --category "RAG,AI"
 
         # From file (auto-detects JSON/YAML/CSV)
         praisonaiwp create posts.json
 
         # Create page
-        praisonaiwp create "About Us" --content "<p>About</p>" --type page
+        praisonaiwp create "About Us" --content "<!-- wp:paragraph --><p>About</p><!-- /wp:paragraph -->" --type page
 
     \b
-    GUTENBERG BLOCKS (use with --no-block-conversion):
+    GUTENBERG BLOCK EXAMPLES (default format):
 
     \b
         Paragraph:

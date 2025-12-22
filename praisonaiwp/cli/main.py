@@ -116,25 +116,21 @@ def cli(ctx, json_output):
     \b
     CONTENT FORMAT:
     ---------------
-    Content should be HTML. By default, it auto-converts to Gutenberg blocks.
-    Use --no-block-conversion to send raw Gutenberg block markup directly.
+    Gutenberg blocks are the DEFAULT and PREFERRED format.
+    HTML content is automatically converted to Gutenberg blocks.
+    Use --no-block-conversion only if you're providing raw Gutenberg block markup.
 
     \b
     AUTOMATION & SCRIPTING:
     -----------------------
     For scripting and automation, use --json flag:
-    praisonaiwp --json create "Post Title" --content "<p>Content</p>"
+    praisonaiwp --json create "Post Title" --content "<!-- wp:paragraph --><p>Content</p><!-- /wp:paragraph -->"
 
     JSON output includes structured data and error information for programmatic use.
 
     \b
-    PREFERRED CONTENT STRUCTURE:
-    ----------------------------
-    WordPress-based HTML structure is preferred for best compatibility.
-
-    \b
-    GUTENBERG BLOCK FORMAT (use with --no-block-conversion):
-    --------------------------------------------------------
+    GUTENBERG BLOCK FORMAT (default):
+    ----------------------------------
 
     \b
     Paragraph:
