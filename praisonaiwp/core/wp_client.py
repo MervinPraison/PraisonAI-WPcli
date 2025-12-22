@@ -1418,3 +1418,585 @@ class WPClient:
         except WPCLIError:
             logger.warning(f"Category ID {category_id} not found")
             return None
+    
+    def get_config_param(self, param: str) -> Optional[str]:
+        """
+        Get WordPress configuration parameter
+        
+        Args:
+            param: Configuration parameter name
+            
+        Returns:
+            Parameter value or None
+        """
+        try:
+            cmd = f"config get {param}"
+            result = self._execute_wp(cmd)
+            value = result.strip()
+            
+            logger.debug(f"Retrieved config {param}: {value}")
+            return value if value else None
+        except WPCLIError:
+            logger.warning(f"Config parameter '{param}' not found")
+            return None
+    
+    def set_config_param(self, param: str, value: str) -> bool:
+        """
+        Set WordPress configuration parameter
+        
+        Args:
+            param: Configuration parameter name
+            value: Parameter value
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Escape the value for shell
+            escaped_value = value.replace("'", "'\\''")
+            cmd = f"config set {param} '{escaped_value}'"
+            self._execute_wp(cmd)
+            
+            logger.info(f"Set config {param} = {value}")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to set config {param}: {e}")
+            return False
+    
+    def get_all_config(self) -> Dict[str, str]:
+        """
+        Get all WordPress configuration parameters
+        
+        Returns:
+            Dictionary of all config parameters
+        """
+        try:
+            cmd = "config list --format=json"
+            result = self._execute_wp(cmd)
+            config_data = json.loads(result)
+            
+            logger.debug(f"Retrieved {len(config_data)} config parameters")
+            return config_data
+        except WPCLIError as e:
+            logger.error(f"Failed to get all config: {e}")
+            return {}
+    
+    def create_config(self, params: Dict[str, str], force: bool = False) -> bool:
+        """
+        Create WordPress wp-config.php file
+        
+        Args:
+            params: Configuration parameters
+            force: Whether to overwrite existing config
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            # Build config creation command
+            cmd_parts = ["config create"]
+            
+            if force:
+                cmd_parts.append("--force")
+            
+            # Add parameters
+            for key, value in params.items():
+                if key.startswith('$'):
+                    # Special parameters like $table_prefix
+                    escaped_value = value.replace("'", "'\\''")
+                    cmd_parts.append(f"--{key}='{escaped_value}'")
+                else:
+                    escaped_value = value.replace("'", "'\\''")
+                    cmd_parts.append(f"--{key}='{escaped_value}'")
+            
+            cmd = " ".join(cmd_parts)
+            self._execute_wp(cmd)
+            
+            logger.info("Created wp-config.php successfully")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to create config: {e}")
+            return False
+    
+    def get_config_path(self) -> Optional[str]:
+        """
+        Get WordPress configuration file path
+        
+        Returns:
+            Config file path or None
+        """
+        try:
+            cmd = "config path"
+            result = self._execute_wp(cmd)
+            path = result.strip()
+            
+            logger.debug(f"Config path: {path}")
+            return path if path else None
+        except WPCLIError:
+            logger.warning("Could not get config path")
+            return None
+    
+    def get_core_version(self) -> Optional[str]:
+        """
+        Get WordPress core version
+        
+        Returns:
+            WordPress version string or None
+        """
+        try:
+            cmd = "core version"
+            result = self._execute_wp(cmd)
+            version = result.strip()
+            
+            logger.debug(f"WordPress version: {version}")
+            return version if version else None
+        except WPCLIError:
+            logger.warning("Could not get WordPress version")
+            return None
+    
+    def update_core(self, version: Optional[str] = None, force: bool = False) -> bool:
+        """
+        Update WordPress core
+        
+        Args:
+            version: Specific version to update to (None for latest)
+            force: Force update even if already up to date
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd_parts = ["core", "update"]
+            
+            if version:
+                cmd_parts.append(f"--version={version}")
+            
+            if force:
+                cmd_parts.append("--force")
+            
+            cmd = " ".join(cmd_parts)
+            self._execute_wp(cmd)
+            
+            logger.info(f"Updated WordPress core to version {version or 'latest'}")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to update WordPress core: {e}")
+            return False
+    
+    def download_core(self, version: Optional[str] = None, path: Optional[str] = None) -> Optional[str]:
+        """
+        Download WordPress core
+        
+        Args:
+            version: Specific version to download (None for latest)
+            path: Download path (None for default)
+            
+        Returns:
+            Download path or None if failed
+        """
+        try:
+            cmd_parts = ["core", "download"]
+            
+            if version:
+                cmd_parts.append(f"--version={version}")
+            
+            if path:
+                cmd_parts.append(f"--path={path}")
+            
+            cmd = " ".join(cmd_parts)
+            result = self._execute_wp(cmd)
+            
+            # Extract download path from result
+            download_path = result.strip()
+            logger.info(f"Downloaded WordPress core to {download_path}")
+            return download_path
+        except WPCLIError as e:
+            logger.error(f"Failed to download WordPress core: {e}")
+            return None
+    
+    def install_core(self, version: Optional[str] = None, force: bool = False) -> bool:
+        """
+        Install WordPress core
+        
+        Args:
+            version: Specific version to install (None for latest)
+            force: Force installation even if WordPress exists
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd_parts = ["core", "install"]
+            
+            if version:
+                cmd_parts.append(f"--version={version}")
+            
+            if force:
+                cmd_parts.append("--force")
+            
+            cmd = " ".join(cmd_parts)
+            self._execute_wp(cmd)
+            
+            logger.info(f"Installed WordPress core version {version or 'latest'}")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to install WordPress core: {e}")
+            return False
+    
+    def verify_core(self) -> bool:
+        """
+        Verify WordPress core files
+        
+        Returns:
+            True if valid, False otherwise
+        """
+        try:
+            cmd = "core verify-checksums"
+            self._execute_wp(cmd)
+            
+            logger.info("WordPress core files are valid")
+            return True
+        except WPCLIError as e:
+            logger.error(f"WordPress core files are invalid: {e}")
+            return False
+    
+    def check_core_update(self) -> Optional[Dict[str, Any]]:
+        """
+        Check for WordPress core updates
+        
+        Returns:
+            Update information dictionary or None
+        """
+        try:
+            cmd = "core check-update --format=json"
+            result = self._execute_wp(cmd)
+            
+            if result.strip():
+                update_info = json.loads(result)
+                logger.debug(f"Core update info: {update_info}")
+                return update_info
+            else:
+                logger.info("WordPress is up to date")
+                return {}
+        except WPCLIError as e:
+            logger.error(f"Failed to check core updates: {e}")
+            return None
+    
+    def list_cron_events(self) -> List[Dict[str, Any]]:
+        """
+        List WordPress cron events
+        
+        Returns:
+            List of cron event dictionaries
+        """
+        try:
+            cmd = "cron event list --format=json"
+            result = self._execute_wp(cmd)
+            events = json.loads(result)
+            
+            logger.debug(f"Retrieved {len(events)} cron events")
+            return events
+        except WPCLIError as e:
+            logger.error(f"Failed to list cron events: {e}")
+            return []
+    
+    def run_cron(self) -> bool:
+        """
+        Run WordPress cron events
+        
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd = "cron event run --due-now"
+            self._execute_wp(cmd)
+            
+            logger.info("Executed cron events")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to run cron events: {e}")
+            return False
+    
+    def schedule_cron_event(self, hook: str, recurrence: str, time: Optional[str] = None, args: Optional[str] = None) -> bool:
+        """
+        Schedule a WordPress cron event
+        
+        Args:
+            hook: Hook name
+            recurrence: Schedule recurrence
+            time: Time for daily/twicedaily schedules
+            args: Arguments to pass to hook
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd_parts = ["cron", "event", "schedule", hook, f"--recurrence={recurrence}"]
+            
+            if time:
+                cmd_parts.append(f"--time={time}")
+            
+            if args:
+                cmd_parts.append(f"--args={args}")
+            
+            cmd = " ".join(cmd_parts)
+            self._execute_wp(cmd)
+            
+            logger.info(f"Scheduled cron event '{hook}' with recurrence '{recurrence}'")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to schedule cron event: {e}")
+            return False
+    
+    def delete_cron_event(self, hook: str) -> bool:
+        """
+        Delete a WordPress cron event
+        
+        Args:
+            hook: Hook name to delete
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd = f"cron event delete {hook}"
+            self._execute_wp(cmd)
+            
+            logger.info(f"Deleted cron event '{hook}'")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to delete cron event: {e}")
+            return False
+    
+    def test_cron(self) -> bool:
+        """
+        Test WordPress cron system
+        
+        Returns:
+            True if working, False otherwise
+        """
+        try:
+            cmd = "cron test"
+            result = self._execute_wp(cmd)
+            
+            # Check if cron is working
+            if "SUCCESS" in result or "working" in result.lower():
+                logger.info("WordPress cron system is working")
+                return True
+            else:
+                logger.warning("WordPress cron system is not working")
+                return False
+        except WPCLIError as e:
+            logger.error(f"Failed to test cron system: {e}")
+            return False
+    
+    def list_taxonomies(self) -> List[Dict[str, Any]]:
+        """
+        List WordPress taxonomies
+        
+        Returns:
+            List of taxonomy dictionaries
+        """
+        try:
+            cmd = "taxonomy list --format=json"
+            result = self._execute_wp(cmd)
+            taxonomies = json.loads(result)
+            
+            logger.debug(f"Retrieved {len(taxonomies)} taxonomies")
+            return taxonomies
+        except WPCLIError as e:
+            logger.error(f"Failed to list taxonomies: {e}")
+            return []
+    
+    def get_taxonomy(self, taxonomy: str) -> Optional[Dict[str, Any]]:
+        """
+        Get WordPress taxonomy information
+        
+        Args:
+            taxonomy: Taxonomy name
+            
+        Returns:
+            Taxonomy dictionary or None
+        """
+        try:
+            cmd = f"taxonomy get {taxonomy} --format=json"
+            result = self._execute_wp(cmd)
+            taxonomy_info = json.loads(result)
+            
+            logger.debug(f"Retrieved taxonomy info for {taxonomy}")
+            return taxonomy_info
+        except WPCLIError:
+            logger.warning(f"Taxonomy '{taxonomy}' not found")
+            return None
+    
+    def list_terms(self, taxonomy: str) -> List[Dict[str, Any]]:
+        """
+        List WordPress taxonomy terms
+        
+        Args:
+            taxonomy: Taxonomy name
+            
+        Returns:
+            List of term dictionaries
+        """
+        try:
+            cmd = f"term list {taxonomy} --format=json"
+            result = self._execute_wp(cmd)
+            terms = json.loads(result)
+            
+            logger.debug(f"Retrieved {len(terms)} terms for {taxonomy}")
+            return terms
+        except WPCLIError as e:
+            logger.error(f"Failed to list terms for {taxonomy}: {e}")
+            return []
+    
+    def get_term(self, taxonomy: str, term_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get WordPress taxonomy term information
+        
+        Args:
+            taxonomy: Taxonomy name
+            term_id: Term ID
+            
+        Returns:
+            Term dictionary or None
+        """
+        try:
+            cmd = f"term get {taxonomy} {term_id} --format=json"
+            result = self._execute_wp(cmd)
+            term_info = json.loads(result)
+            
+            logger.debug(f"Retrieved term info for {term_id} in {taxonomy}")
+            return term_info
+        except WPCLIError:
+            logger.warning(f"Term '{term_id}' not found in taxonomy '{taxonomy}'")
+            return None
+    
+    def create_term(self, taxonomy: str, name: str, slug: Optional[str] = None, 
+                   parent: Optional[str] = None, description: Optional[str] = None) -> Optional[Dict[str, Any]]:
+        """
+        Create a WordPress taxonomy term
+        
+        Args:
+            taxonomy: Taxonomy name
+            name: Term name
+            slug: Term slug (optional)
+            parent: Parent term ID (optional)
+            description: Term description (optional)
+            
+        Returns:
+            Created term dictionary or None
+        """
+        try:
+            cmd_parts = ["term", "create", taxonomy, f"'{name}'"]
+            
+            if slug:
+                cmd_parts.append(f"--slug='{slug}'")
+            
+            if parent:
+                cmd_parts.append(f"--parent={parent}")
+            
+            if description:
+                escaped_desc = description.replace("'", "'\\''")
+                cmd_parts.append(f"--description='{escaped_desc}'")
+            
+            cmd_parts.append("--porcelain")
+            cmd = " ".join(cmd_parts)
+            result = self._execute_wp(cmd)
+            term_id = result.strip()
+            
+            # Get the created term info
+            term_info = self.get_term(taxonomy, term_id)
+            logger.info(f"Created term '{name}' in taxonomy '{taxonomy}'")
+            return term_info
+        except WPCLIError as e:
+            logger.error(f"Failed to create term: {e}")
+            return None
+    
+    def delete_term(self, taxonomy: str, term_id: str) -> bool:
+        """
+        Delete a WordPress taxonomy term
+        
+        Args:
+            taxonomy: Taxonomy name
+            term_id: Term ID
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd = f"term delete {taxonomy} {term_id}"
+            self._execute_wp(cmd)
+            
+            logger.info(f"Deleted term '{term_id}' from taxonomy '{taxonomy}'")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to delete term: {e}")
+            return False
+    
+    def list_widgets(self) -> List[Dict[str, Any]]:
+        """
+        List WordPress widgets
+        
+        Returns:
+            List of widget dictionaries
+        """
+        try:
+            cmd = "widget list --format=json"
+            result = self._execute_wp(cmd)
+            widgets = json.loads(result)
+            
+            logger.debug(f"Retrieved {len(widgets)} widgets")
+            return widgets
+        except WPCLIError as e:
+            logger.error(f"Failed to list widgets: {e}")
+            return []
+    
+    def get_widget(self, widget_id: str) -> Optional[Dict[str, Any]]:
+        """
+        Get WordPress widget information
+        
+        Args:
+            widget_id: Widget ID
+            
+        Returns:
+            Widget dictionary or None
+        """
+        try:
+            cmd = f"widget get {widget_id} --format=json"
+            result = self._execute_wp(cmd)
+            widget_info = json.loads(result)
+            
+            logger.debug(f"Retrieved widget info for {widget_id}")
+            return widget_info
+        except WPCLIError:
+            logger.warning(f"Widget '{widget_id}' not found")
+            return None
+    
+    def update_widget(self, widget_id: str, options: Dict[str, str]) -> bool:
+        """
+        Update a WordPress widget
+        
+        Args:
+            widget_id: Widget ID
+            options: Widget options to update
+            
+        Returns:
+            True if successful, False otherwise
+        """
+        try:
+            cmd_parts = ["widget", "update", widget_id]
+            
+            # Add options
+            for key, value in options.items():
+                escaped_value = str(value).replace("'", "'\\''")
+                cmd_parts.append(f"--{key}='{escaped_value}'")
+            
+            cmd = " ".join(cmd_parts)
+            self._execute_wp(cmd)
+            
+            logger.info(f"Updated widget '{widget_id}' with options: {list(options.keys())}")
+            return True
+        except WPCLIError as e:
+            logger.error(f"Failed to update widget: {e}")
+            return False

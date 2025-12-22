@@ -22,6 +22,12 @@ from praisonaiwp.cli.commands.menu import menu_command
 from praisonaiwp.cli.commands.transient import transient_command
 from praisonaiwp.cli.commands.post import post_command
 from praisonaiwp.cli.commands.db import db_command
+from praisonaiwp.cli.commands.config import config_command
+from praisonaiwp.cli.commands.core import core_command
+from praisonaiwp.cli.commands.cron import cron_command
+from praisonaiwp.cli.commands.taxonomy import taxonomy_command
+from praisonaiwp.cli.commands.term import term_command
+from praisonaiwp.cli.commands.widget import widget_command
 
 # Try to import AI commands (optional)
 try:
@@ -188,6 +194,12 @@ cli.add_command(menu_command, name='menu')
 cli.add_command(transient_command, name='transient')
 cli.add_command(post_command, name='post')
 cli.add_command(db_command, name='db')
+cli.add_command(config_command, name='config')
+cli.add_command(core_command, name='core')
+cli.add_command(cron_command, name='cron')
+cli.add_command(taxonomy_command, name='taxonomy')
+cli.add_command(term_command, name='term')
+cli.add_command(widget_command, name='widget')
 
 # Register AI commands if available
 if AI_COMMANDS_AVAILABLE:
