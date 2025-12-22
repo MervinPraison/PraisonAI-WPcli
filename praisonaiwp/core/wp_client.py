@@ -1022,6 +1022,53 @@ class WPClient:
         logger.info(f"Imported media {file_path} with ID {attachment_id}")
         return attachment_id
     
+    def get_media_info(self, attachment_id: int, field: Optional[str] = None) -> Any:
+        """
+        Get media/attachment information
+        
+        Args:
+            attachment_id: Attachment ID
+            field: Specific field to retrieve (guid, post_title, post_mime_type, etc.)
+            
+        Returns:
+            Attachment data (dict if no field specified, str if field specified)
+        """
+        return self.get_post(attachment_id, field=field)
+    
+    def get_media_url(self, attachment_id: int) -> str:
+        """
+        Get media URL
+        
+        Args:
+            attachment_id: Attachment ID
+            
+        Returns:
+            Media URL
+        """
+        url = self.get_post(attachment_id, field='guid')
+        logger.info(f"Retrieved URL for attachment {attachment_id}: {url}")
+        return url.strip()
+    
+    def list_media(self, post_id: int = None, **filters) -> List[Dict[str, Any]]:
+        """
+        List media/attachments
+        
+        Args:
+            post_id: Filter by parent post ID (optional)
+            **filters: Additional filters (mime_type, etc.)
+            
+        Returns:
+            List of attachment dictionaries
+        """
+        list_filters = {'post_type': 'attachment'}
+        
+        if post_id is not None:
+            list_filters['post_parent'] = post_id
+        
+        list_filters.update(filters)
+        
+        return self.list_posts(**list_filters)
+    
     def list_comments(self, **filters) -> List[Dict[str, Any]]:
         """
         List comments with filters

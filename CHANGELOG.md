@@ -5,6 +5,32 @@ All notable changes to PraisonAI WPcli will be documented in this file.
 The format is based on [Keep a Changelog](https://keepachangelog.com/en/1.0.0/),
 and this project adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [1.4.2] - 2025-12-22
+
+### Added
+- **Media URL Retrieval**: New commands to get media/attachment information
+  - `praisonaiwp media url <ID>` - Get media URL directly
+  - `praisonaiwp media get <ID>` - Get full attachment information
+  - `praisonaiwp media list` - List all attachments with filters
+  - `--post-id` filter to list attachments for specific post
+  - `--mime-type` filter to list by file type
+  - Rich table display for media listings
+
+### Enhanced
+- **WPClient Methods**: Added media retrieval methods
+  - `get_media_info()` - Get attachment data
+  - `get_media_url()` - Get attachment URL
+  - `list_media()` - List attachments with filters
+- **Media Command**: Converted to command group with subcommands
+  - `upload` - Upload media (previously default)
+  - `get` - Get attachment info
+  - `url` - Get attachment URL
+  - `list` - List attachments
+
+### Fixed
+- Media URL retrieval no longer requires manual SSH commands
+- Easy access to uploaded file URLs for AI agents and automation
+
 ## [1.4.1] - 2025-12-21
 
 ### Added
