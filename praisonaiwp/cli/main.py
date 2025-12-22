@@ -15,6 +15,7 @@ from praisonaiwp.cli.commands.find_wordpress import find_wordpress
 from praisonaiwp.cli.commands.user import user_command
 from praisonaiwp.cli.commands.option import option_command
 from praisonaiwp.cli.commands.meta import meta_command
+from praisonaiwp.cli.commands.comment import comment_command
 
 # Try to import AI commands (optional)
 try:
@@ -174,6 +175,7 @@ cli.add_command(plugin, name='plugin')
 cli.add_command(user_command, name='user')
 cli.add_command(option_command, name='option')
 cli.add_command(meta_command, name='meta')
+cli.add_command(comment_command, name='comment')
 
 # Register AI commands if available
 if AI_COMMANDS_AVAILABLE:
