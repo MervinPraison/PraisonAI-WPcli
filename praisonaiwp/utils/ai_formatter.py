@@ -1,13 +1,13 @@
 """AI-friendly output formatter for machine-readable responses"""
 
 import json
-from typing import Any, Dict, List, Optional, Union
 from datetime import datetime
+from typing import Any, Dict, List, Union
 
 
 class AIFormatter:
     """Formats CLI output for AI agent consumption"""
-    
+
     @staticmethod
     def success_response(data: Any, message: str = "Operation successful", command: str = "") -> Dict[str, Any]:
         """Format successful operation response"""
@@ -19,7 +19,7 @@ class AIFormatter:
             "timestamp": datetime.utcnow().isoformat(),
             "ai_friendly": True
         }
-    
+
     @staticmethod
     def error_response(error: str, command: str = "", error_code: str = "GENERAL_ERROR") -> Dict[str, Any]:
         """Format error response for AI agents"""
@@ -32,7 +32,7 @@ class AIFormatter:
             "ai_friendly": True,
             "suggestions": AIFormatter._get_error_suggestions(error_code)
         }
-    
+
     @staticmethod
     def list_response(items: List[Dict[str, Any]], total: int = None, command: str = "") -> Dict[str, Any]:
         """Format list response with metadata"""
@@ -49,7 +49,7 @@ class AIFormatter:
             "timestamp": datetime.utcnow().isoformat(),
             "ai_friendly": True
         }
-    
+
     @staticmethod
     def create_response(created_item: Dict[str, Any], item_type: str = "item", command: str = "") -> Dict[str, Any]:
         """Format creation response"""
@@ -63,7 +63,7 @@ class AIFormatter:
             "timestamp": datetime.utcnow().isoformat(),
             "ai_friendly": True
         }
-    
+
     @staticmethod
     def update_response(updated_item: Dict[str, Any], item_type: str = "item", command: str = "") -> Dict[str, Any]:
         """Format update response"""
@@ -77,7 +77,7 @@ class AIFormatter:
             "timestamp": datetime.utcnow().isoformat(),
             "ai_friendly": True
         }
-    
+
     @staticmethod
     def delete_response(deleted_id: Union[str, int], item_type: str = "item", command: str = "") -> Dict[str, Any]:
         """Format deletion response"""
@@ -90,7 +90,7 @@ class AIFormatter:
             "timestamp": datetime.utcnow().isoformat(),
             "ai_friendly": True
         }
-    
+
     @staticmethod
     def help_response(command_info: Dict[str, Any], examples: List[Dict[str, str]] = None) -> Dict[str, Any]:
         """Format help response for AI agents"""
@@ -109,7 +109,7 @@ class AIFormatter:
             "timestamp": datetime.utcnow().isoformat(),
             "ai_friendly": True
         }
-    
+
     @staticmethod
     def _get_error_suggestions(error_code: str) -> List[str]:
         """Get AI-friendly suggestions for common errors"""
@@ -141,7 +141,7 @@ class AIFormatter:
             ]
         }
         return suggestions.get(error_code, ["Check command syntax and parameters", "Verify server connection and permissions"])
-    
+
     @staticmethod
     def format_output(output: Dict[str, Any], pretty: bool = False) -> str:
         """Convert response to JSON string"""
