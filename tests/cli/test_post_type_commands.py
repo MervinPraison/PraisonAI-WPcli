@@ -23,9 +23,9 @@ class TestPostTypeCommands:
         self.mock_ssh_manager = Mock()
         self.mock_wp_client = Mock()
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_list_basic(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test basic post-type list"""
         # Setup mocks
@@ -52,9 +52,9 @@ class TestPostTypeCommands:
         assert "Post Types" in result.output
         assert "post" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_list_json_format(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type list with JSON format"""
         # Setup mocks
@@ -79,9 +79,9 @@ class TestPostTypeCommands:
         self.mock_wp_client.post_type_list.assert_called_once_with("json")
         assert "post" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_list_json_output(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type list with JSON output"""
         # Setup mocks
@@ -107,7 +107,7 @@ class TestPostTypeCommands:
         assert '"post-type list"' in result.output
         assert '"ai_friendly": true' in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
+    @patch.object(post_type_module, 'Config')
     def test_post_type_list_config_not_found(self, mock_config_class):
         """Test post-type list when config not found"""
         # Setup mock to raise exception
@@ -120,9 +120,9 @@ class TestPostTypeCommands:
         assert result.exit_code == 1
         assert "Configuration not found" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_list_empty(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type list with no post types"""
         # Setup mocks
@@ -142,9 +142,9 @@ class TestPostTypeCommands:
         assert result.exit_code == 0
         assert "No post types found" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_get_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type get success"""
         # Setup mocks
@@ -171,9 +171,9 @@ class TestPostTypeCommands:
         assert "Post Type: post" in result.output
         assert "Posts" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_get_not_found(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type get when post type not found"""
         # Setup mocks
@@ -194,9 +194,9 @@ class TestPostTypeCommands:
         self.mock_wp_client.post_type_get.assert_called_once_with('nonexistent')
         assert "Post type 'nonexistent' not found" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_create_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type create success"""
         # Setup mocks
@@ -218,9 +218,9 @@ class TestPostTypeCommands:
         assert "Post type 'book' created successfully" in result.output
         assert "Label: Books" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_create_with_options(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type create with options"""
         # Setup mocks
@@ -245,9 +245,9 @@ class TestPostTypeCommands:
         assert "Has Archive: true" in result.output
         assert "Supports: title,editor" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_delete_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type delete success"""
         # Setup mocks
@@ -268,9 +268,9 @@ class TestPostTypeCommands:
         self.mock_wp_client.post_type_delete.assert_called_once_with('book', False)
         assert "Post type 'book' deleted successfully" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_delete_force(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type delete with force"""
         # Setup mocks
@@ -291,9 +291,9 @@ class TestPostTypeCommands:
         self.mock_wp_client.post_type_delete.assert_called_once_with('book', True)
         assert "Post type 'book' deleted successfully (forced)" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_update_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type update success"""
         # Setup mocks
@@ -315,9 +315,9 @@ class TestPostTypeCommands:
         assert "Post type 'book' updated successfully" in result.output
         assert "Label: New Books" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_update_no_params(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type update with no parameters"""
         # Setup mocks
@@ -336,9 +336,9 @@ class TestPostTypeCommands:
         assert result.exit_code == 1
         assert "No update parameters provided" in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_update_json_output(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type update with JSON output"""
         # Setup mocks
@@ -361,9 +361,9 @@ class TestPostTypeCommands:
         assert '"post_type": "book"' in result.output
         assert '"updated": true' in result.output
 
-    @patch('praisonaiwp.cli.commands.post_type.Config')
-    @patch('praisonaiwp.cli.commands.post_type.SSHManager')
-    @patch('praisonaiwp.cli.commands.post_type.WPClient')
+    @patch.object(post_type_module, 'Config')
+    @patch.object(post_type_module, 'SSHManager')
+    @patch.object(post_type_module, 'WPClient')
     def test_post_type_create_failure(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test post-type create failure"""
         # Setup mocks

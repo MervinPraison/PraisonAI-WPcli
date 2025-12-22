@@ -53,9 +53,9 @@ class TestSuperAdminCommands:
         assert "Super Admins" in result.output
         assert "admin@example.com" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_list_json_format(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin list with JSON format"""
         # Setup mocks
@@ -80,9 +80,9 @@ class TestSuperAdminCommands:
         self.mock_wp_client.super_admin_list.assert_called_once_with("json")
         assert "admin@example.com" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_list_json_output(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin list with JSON output"""
         # Setup mocks
@@ -108,7 +108,7 @@ class TestSuperAdminCommands:
         assert '"super-admin list"' in result.output
         assert '"ai_friendly": true' in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
+    @patch.object(super_admin_module, 'Config')
     def test_super_admin_list_config_not_found(self, mock_config_class):
         """Test super-admin list when config not found"""
         # Setup mock to raise exception
@@ -121,9 +121,9 @@ class TestSuperAdminCommands:
         assert result.exit_code == 1
         assert "Configuration not found" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_list_empty(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin list with no super admins"""
         # Setup mocks
@@ -143,9 +143,9 @@ class TestSuperAdminCommands:
         assert result.exit_code == 0
         assert "No super admins found" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_add_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin add success"""
         # Setup mocks
@@ -166,9 +166,9 @@ class TestSuperAdminCommands:
         self.mock_wp_client.super_admin_add.assert_called_once_with('1')
         assert "Super admin '1' added successfully" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_add_by_email(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin add by email"""
         # Setup mocks
@@ -189,9 +189,9 @@ class TestSuperAdminCommands:
         self.mock_wp_client.super_admin_add.assert_called_once_with('admin@example.com')
         assert "Super admin 'admin@example.com' added successfully" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_add_failure(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin add failure"""
         # Setup mocks
@@ -211,9 +211,9 @@ class TestSuperAdminCommands:
         assert result.exit_code == 1
         assert "Failed to add super admin" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_remove_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin remove success"""
         # Setup mocks
@@ -234,9 +234,9 @@ class TestSuperAdminCommands:
         self.mock_wp_client.super_admin_remove.assert_called_once_with('1')
         assert "Super admin '1' removed successfully" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_remove_by_email(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin remove by email"""
         # Setup mocks
@@ -257,9 +257,9 @@ class TestSuperAdminCommands:
         self.mock_wp_client.super_admin_remove.assert_called_once_with('admin@example.com')
         assert "Super admin 'admin@example.com' removed successfully" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_remove_failure(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin remove failure"""
         # Setup mocks
@@ -279,9 +279,9 @@ class TestSuperAdminCommands:
         assert result.exit_code == 1
         assert "Failed to remove super admin" in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_add_json_output(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin add with JSON output"""
         # Setup mocks
@@ -304,9 +304,9 @@ class TestSuperAdminCommands:
         assert '"user_id": "1"' in result.output
         assert '"added": true' in result.output
 
-    @patch('praisonaiwp.cli.commands.super_admin.Config')
-    @patch('praisonaiwp.cli.commands.super_admin.SSHManager')
-    @patch('praisonaiwp.cli.commands.super_admin.WPClient')
+    @patch.object(super_admin_module, 'Config')
+    @patch.object(super_admin_module, 'SSHManager')
+    @patch.object(super_admin_module, 'WPClient')
     def test_super_admin_command_help(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test super-admin command help"""
         # Execute command

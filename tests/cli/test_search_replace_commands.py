@@ -23,9 +23,9 @@ class TestSearchReplaceCommands:
         self.mock_ssh_manager = Mock()
         self.mock_wp_client = Mock()
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_search_replace_run_basic(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test basic search-replace"""
         # Setup mocks
@@ -57,9 +57,9 @@ class TestSearchReplaceCommands:
         assert "old-text" in result.output
         assert "new-text" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_search_replace_run_dry_run(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test search-replace with dry run"""
         # Setup mocks
@@ -91,9 +91,9 @@ class TestSearchReplaceCommands:
         assert "Yes" in result.output  # Dry Run column
         assert "This was a dry run" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_search_replace_run_with_table(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test search-replace with specific table"""
         # Setup mocks
@@ -123,9 +123,9 @@ class TestSearchReplaceCommands:
         )
         assert "wp_options" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_search_replace_run_regex(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test search-replace with regex"""
         # Setup mocks
@@ -155,9 +155,9 @@ class TestSearchReplaceCommands:
         )
         assert "Yes" in result.output  # Regex column
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_search_replace_run_json_output(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test search-replace with JSON output"""
         # Setup mocks
@@ -186,7 +186,7 @@ class TestSearchReplaceCommands:
         assert '"search-replace operation"' in result.output
         assert '"ai_friendly": true' in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
+    @patch.object(search_replace_module, 'Config')
     def test_search_replace_run_config_not_found(self, mock_config_class):
         """Test search-replace when config not found"""
         # Setup mock to raise exception
@@ -201,9 +201,9 @@ class TestSearchReplaceCommands:
         assert result.exit_code == 1
         assert "Configuration not found" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_search_replace_run_wpcli_error(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test search-replace with WP-CLI error"""
         # Setup mocks
@@ -225,9 +225,9 @@ class TestSearchReplaceCommands:
         assert result.exit_code == 1
         assert "Search failed" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_db_optimize_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test database optimization success"""
         # Setup mocks
@@ -248,9 +248,9 @@ class TestSearchReplaceCommands:
         self.mock_wp_client.db_optimize.assert_called_once()
         assert "Database optimized successfully!" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_db_optimize_failure(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test database optimization failure"""
         # Setup mocks
@@ -270,9 +270,9 @@ class TestSearchReplaceCommands:
         assert result.exit_code == 1
         assert "Failed to optimize database" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_db_repair_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test database repair success"""
         # Setup mocks
@@ -293,9 +293,9 @@ class TestSearchReplaceCommands:
         self.mock_wp_client.db_repair.assert_called_once()
         assert "Database repaired successfully!" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_db_check_success(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test database check success"""
         # Setup mocks
@@ -321,9 +321,9 @@ class TestSearchReplaceCommands:
         assert "Database Check Results" in result.output
         assert "wp_posts" in result.output
 
-    @patch('praisonaiwp.cli.commands.search_replace.Config')
-    @patch('praisonaiwp.cli.commands.search_replace.SSHManager')
-    @patch('praisonaiwp.cli.commands.search_replace.WPClient')
+    @patch.object(search_replace_module, 'Config')
+    @patch.object(search_replace_module, 'SSHManager')
+    @patch.object(search_replace_module, 'WPClient')
     def test_db_check_json_output(self, mock_wp_client_class, mock_ssh_manager_class, mock_config_class):
         """Test database check with JSON output"""
         # Setup mocks
