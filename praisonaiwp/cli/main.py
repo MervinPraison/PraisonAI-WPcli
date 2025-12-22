@@ -20,7 +20,6 @@ from praisonaiwp.cli.commands.import_export import export_command, import_comman
 from praisonaiwp.cli.commands.init import init_command
 from praisonaiwp.cli.commands.install_wp_cli import install_wp_cli
 from praisonaiwp.cli.commands.list import list_command
-from praisonaiwp.cli.commands.maintenance_mode import maintenance_mode
 from praisonaiwp.cli.commands.media import media_command
 from praisonaiwp.cli.commands.menu import menu_command
 from praisonaiwp.cli.commands.meta import meta_command
@@ -28,15 +27,12 @@ from praisonaiwp.cli.commands.network import network_command
 from praisonaiwp.cli.commands.option import option_command
 from praisonaiwp.cli.commands.plugin import plugin
 from praisonaiwp.cli.commands.post import post_command
-from praisonaiwp.cli.commands.post_type import post_type_command
 from praisonaiwp.cli.commands.rewrite import rewrite_command
 from praisonaiwp.cli.commands.role import role_command
 from praisonaiwp.cli.commands.scaffold import scaffold_command
-from praisonaiwp.cli.commands.search_replace import search_replace_command
 from praisonaiwp.cli.commands.server import server_command
 from praisonaiwp.cli.commands.sidebar import sidebar_command
 from praisonaiwp.cli.commands.site import site_command
-from praisonaiwp.cli.commands.super_admin import super_admin_command
 from praisonaiwp.cli.commands.system import system_command
 from praisonaiwp.cli.commands.taxonomy import taxonomy_command
 from praisonaiwp.cli.commands.term import term_command
@@ -52,9 +48,40 @@ from praisonaiwp.cli.commands.admin import admin
 from praisonaiwp.cli.commands.block import block
 from praisonaiwp.cli.commands.cap import cap
 from praisonaiwp.cli.commands.cli import wpcli
-from praisonaiwp.cli.commands.dist_archive import dist_archive
+import importlib.util
+
+# Import modules with hyphens in names
+dist_archive_spec = importlib.util.spec_from_file_location("dist_archive", "praisonaiwp/cli/commands/dist-archive.py")
+dist_archive_module = importlib.util.module_from_spec(dist_archive_spec)
+dist_archive_spec.loader.exec_module(dist_archive_module)
+dist_archive = dist_archive_module.dist_archive
+
+eval_file_spec = importlib.util.spec_from_file_location("eval_file", "praisonaiwp/cli/commands/eval-file.py")
+eval_file_module = importlib.util.module_from_spec(eval_file_spec)
+eval_file_spec.loader.exec_module(eval_file_module)
+eval_file = eval_file_module.eval_file
+
+maintenance_mode_spec = importlib.util.spec_from_file_location("maintenance_mode", "praisonaiwp/cli/commands/maintenance-mode.py")
+maintenance_mode_module = importlib.util.module_from_spec(maintenance_mode_spec)
+maintenance_mode_spec.loader.exec_module(maintenance_mode_module)
+maintenance_mode = maintenance_mode_module.maintenance_mode
+
+post_type_spec = importlib.util.spec_from_file_location("post_type", "praisonaiwp/cli/commands/post-type.py")
+post_type_module = importlib.util.module_from_spec(post_type_spec)
+post_type_spec.loader.exec_module(post_type_module)
+post_type = post_type_module.post_type_command
+
+search_replace_spec = importlib.util.spec_from_file_location("search_replace", "praisonaiwp/cli/commands/search-replace.py")
+search_replace_module = importlib.util.module_from_spec(search_replace_spec)
+search_replace_spec.loader.exec_module(search_replace_module)
+search_replace = search_replace_module.search_replace_command
+
+super_admin_spec = importlib.util.spec_from_file_location("super_admin", "praisonaiwp/cli/commands/super-admin.py")
+super_admin_module = importlib.util.module_from_spec(super_admin_spec)
+super_admin_spec.loader.exec_module(super_admin_module)
+super_admin = super_admin_module.super_admin_command
+
 from praisonaiwp.cli.commands.embed import embed
-from praisonaiwp.cli.commands.eval_file import eval_file
 from praisonaiwp.cli.commands.i18n import i18n
 from praisonaiwp.cli.commands.language import language
 from praisonaiwp.cli.commands.package import package
@@ -248,14 +275,11 @@ cli.add_command(term_command, name='term')
 cli.add_command(widget_command, name='widget')
 cli.add_command(role_command, name='role')
 cli.add_command(scaffold_command, name='scaffold')
-cli.add_command(search_replace_command, name='search-replace')
 cli.add_command(cache_command, name='cache')
 cli.add_command(rewrite_command, name='rewrite')
 cli.add_command(sidebar_command, name='sidebar')
-cli.add_command(post_type_command, name='post-type')
 cli.add_command(site_command, name='site')
 cli.add_command(network_command, name='network')
-cli.add_command(super_admin_command, name='super-admin')
 cli.add_command(server_command, name='server')
 cli.add_command(backup, name='backup')
 cli.add_command(help_command, name='help')
@@ -263,6 +287,10 @@ cli.add_command(eval_command, name='eval')
 cli.add_command(maintenance_mode, name='maintenance-mode')
 cli.add_command(export_command, name='export')
 cli.add_command(import_command, name='import')
+cli.add_command(media_command, name='media')
+cli.add_command(post_type, name='post-type')
+cli.add_command(search_replace, name='search-replace')
+cli.add_command(super_admin, name='super-admin')
 
 # Register new WP-CLI commands
 cli.add_command(ability, name='ability')

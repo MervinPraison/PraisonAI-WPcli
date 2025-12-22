@@ -231,8 +231,7 @@ def predict(post_id, metrics, timeframe, server, json_output, verbose):
             # Predictions
             predictions = prediction_result.get('predictions', {})
             if predictions:
-                click.echo("
-📊 Predicted Metrics:")
+                click.echo("📊 Predicted Metrics:")
                 for metric, prediction in predictions.items():
                     if isinstance(prediction, dict):
                         current = prediction.get('current', 0)
@@ -247,16 +246,14 @@ def predict(post_id, metrics, timeframe, server, json_output, verbose):
             # Factors
             factors = prediction_result.get('influencing_factors', [])
             if factors:
-                click.echo("
-🎯 Key Influencing Factors:")
+                click.echo("🎯 Key Influencing Factors:")
                 for i, factor in enumerate(factors[:5], 1):
                     click.echo(f"  {i}. {factor.get('factor', 'Unknown')} ({factor.get('impact', 'Unknown')})")
 
             # Recommendations
             recommendations = prediction_result.get('optimization_recommendations', [])
             if recommendations:
-                click.echo("
-💡 Optimization Recommendations:")
+                click.echo("💡 Optimization Recommendations:")
                 for i, rec in enumerate(recommendations, 1):
                     click.echo(f"  {i}. {rec}")
 
@@ -351,8 +348,7 @@ def trends(category, timeframe, server, json_output, verbose):
             # Trending topics
             trending_topics = trends_result.get('trending_topics', [])
             if trending_topics:
-                click.echo("
-🔥 Trending Topics:")
+                click.echo("🔥 Trending Topics:")
                 for i, topic in enumerate(trending_topics[:5], 1):
                     click.echo(f"  {i}. {topic.get('topic', 'Unknown')} (+{topic.get('growth_rate', 0):.1f}%)")
                     click.echo(f"     Posts: {topic.get('post_count', 0)} | Engagement: {topic.get('avg_engagement', 0):.1f}")
@@ -360,16 +356,14 @@ def trends(category, timeframe, server, json_output, verbose):
             # Declining topics
             declining_topics = trends_result.get('declining_topics', [])
             if declining_topics:
-                click.echo("
-📉 Declining Topics:")
+                click.echo("📉 Declining Topics:")
                 for i, topic in enumerate(declining_topics[:3], 1):
                     click.echo(f"  {i}. {topic.get('topic', 'Unknown')} ({topic.get('growth_rate', 0):.1f}%)")
 
             # Performance patterns
             patterns = trends_result.get('performance_patterns', [])
             if patterns:
-                click.echo("
-🎯 Performance Patterns:")
+                click.echo("🎯 Performance Patterns:")
                 for i, pattern in enumerate(patterns, 1):
                     click.echo(f"  {i}. {pattern.get('pattern', 'Unknown')}")
                     click.echo(f"     Impact: {pattern.get('impact', 'Unknown')}")
@@ -377,8 +371,7 @@ def trends(category, timeframe, server, json_output, verbose):
             # Recommendations
             recommendations = trends_result.get('recommendations', [])
             if recommendations:
-                click.echo("
-💡 Trend-Based Recommendations:")
+                click.echo("💡 Trend-Based Recommendations:")
                 for i, rec in enumerate(recommendations, 1):
                     click.echo(f"  {i}. {rec}")
 
@@ -483,16 +476,14 @@ def optimize(post_id, goal, server, json_output, verbose):
             # Current performance
             current = optimization_result.get('current_performance', {})
             if current:
-                click.echo("
-📊 Current Performance:")
+                click.echo("📊 Current Performance:")
                 for metric, value in current.items():
                     click.echo(f"  {metric.title()}: {value}")
 
             # Optimization opportunities
             opportunities = optimization_result.get('optimization_opportunities', [])
             if opportunities:
-                click.echo("
-🎯 Optimization Opportunities:")
+                click.echo("🎯 Optimization Opportunities:")
                 for i, opportunity in enumerate(opportunities, 1):
                     impact = opportunity.get('impact', 'medium')
                     effort = opportunity.get('effort', 'medium')
@@ -505,8 +496,7 @@ def optimize(post_id, goal, server, json_output, verbose):
             # Quick wins
             quick_wins = optimization_result.get('quick_wins', [])
             if quick_wins:
-                click.echo("
-⚡ Quick Wins:")
+                click.echo("⚡ Quick Wins:")
                 for i, win in enumerate(quick_wins, 1):
                     click.echo(f"  {i}. {win.get('action', 'Unknown')}")
                     click.echo(f"     Time to implement: {win.get('time_to_implement', 'Unknown')}")
@@ -515,8 +505,7 @@ def optimize(post_id, goal, server, json_output, verbose):
             # Priority actions
             priority_actions = optimization_result.get('priority_actions', [])
             if priority_actions:
-                click.echo("
-🚀 Priority Actions:")
+                click.echo("🚀 Priority Actions:")
                 for i, action in enumerate(priority_actions, 1):
                     priority = action.get('priority', 'medium')
                     click.echo(f"  {i}. [{priority.upper()}] {action.get('action', 'Unknown')}")
@@ -602,15 +591,13 @@ def compare(days, server, json_output, verbose):
         if json_output:
             click.echo(AIFormatter.format_output(success_msg))
         else:
-            click.echo("
-📊 Post Performance Comparison ({days} days)")
+            click.echo("📊 Post Performance Comparison ({days} days)")
             click.echo("=" * 50)
 
             # Top performers
             top_performers = comparison_result.get('top_performers', [])
             if top_performers:
-                click.echo("
-🏆 Top Performers:")
+                click.echo("🏆 Top Performers:")
                 for i, post in enumerate(top_performers[:5], 1):
                     score = post.get('performance_score', 0)
                     click.echo(f"  {i}. {post.get('title', 'Unknown')} (Score: {score:.1f})")
@@ -619,8 +606,7 @@ def compare(days, server, json_output, verbose):
             # Underperformers
             underperformers = comparison_result.get('underperformers', [])
             if underperformers:
-                click.echo("
-📉 Underperformers:")
+                click.echo("📉 Underperformers:")
                 for i, post in enumerate(underperformers[:3], 1):
                     score = post.get('performance_score', 0)
                     click.echo(f"  {i}. {post.get('title', 'Unknown')} (Score: {score:.1f})")
@@ -629,16 +615,14 @@ def compare(days, server, json_output, verbose):
             # Insights
             insights = comparison_result.get('insights', [])
             if insights:
-                click.echo("
-💡 Key Insights:")
+                click.echo("💡 Key Insights:")
                 for i, insight in enumerate(insights, 1):
                     click.echo(f"  {i}. {insight}")
 
             # Recommendations
             recommendations = comparison_result.get('recommendations', [])
             if recommendations:
-                click.echo("
-🎯 Recommendations:")
+                click.echo("🎯 Recommendations:")
                 for i, rec in enumerate(recommendations, 1):
                     click.echo(f"  {i}. {rec}")
 

@@ -1,13 +1,12 @@
 """WordPress shell commands"""
 import click
 
-from praisonaiwp.cli.main import cli
 from praisonaiwp.core.ssh_manager import SSHManager
 from praisonaiwp.core.config import Config
 from praisonaiwp.core.wp_client import WPClient
 
 
-@cli.command()
+@click.command()
 @click.option('--server', help='Server name from config')
 def shell(server):
     """Interactive WordPress shell."""

@@ -1,13 +1,12 @@
 """WordPress admin management commands"""
 import click
 
-from praisonaiwp.cli.main import cli
 from praisonaiwp.core.ssh_manager import SSHManager
 from praisonaiwp.core.config import Config
 from praisonaiwp.core.wp_client import WPClient
 
 
-@cli.group()
+@click.group()
 def admin():
     """WordPress admin management."""
     pass

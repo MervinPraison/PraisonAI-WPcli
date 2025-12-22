@@ -1,13 +1,12 @@
 """Embed management commands"""
 import click
 
-from praisonaiwp.cli.main import cli
 from praisonaiwp.core.ssh_manager import SSHManager
 from praisonaiwp.core.config import Config
 from praisonaiwp.core.wp_client import WPClient
 
 
-@cli.group()
+@click.group()
 def embed():
     """Manage WordPress embeds."""
     pass
