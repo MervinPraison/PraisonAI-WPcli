@@ -1,7 +1,7 @@
 # Site settings
 title: PraisonAIWP Documentation
 description: AI-powered WordPress content management CLI tool
-baseurl: "/praisonaiwp" # the subpath of your site, e.g. /blog
+baseurl: "/PraisonAI-WPcli" # the subpath of your site, e.g. /blog
 url: "https://mervinpraison.github.io" # the base hostname & protocol for your site
 author: Mervin Praison
 
