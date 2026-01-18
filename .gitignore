@@ -57,3 +57,4 @@ backups/
 # OS
 .DS_Store
 Thumbs.db
+.praison

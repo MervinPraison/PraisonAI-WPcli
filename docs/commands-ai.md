@@ -29,6 +29,7 @@ praisonaiwp ai [COMMAND] [OPTIONS]
 - `curator` - Curate content
 - `moderator` - Moderate content
 - `chatbot` - Chatbot interactions
+- `duplicate` - Duplicate content detection (NEW)
 
 ---
 
@@ -549,6 +550,81 @@ praisonaiwp ai-workflow export --workflow-id wf123 --file workflow.json
 # Import workflow
 praisonaiwp ai-workflow import --file workflow.json
 ```
+
+---
+
+## duplicate
+
+Detect duplicate content using AI embeddings.
+
+```bash
+praisonaiwp duplicate [COMMAND] [OPTIONS]
+```
+
+> **Note:** This command uses persistent SQLite caching. First run indexes all posts (~8 min), subsequent runs are instant (~4 sec).
+
+### Subcommands
+
+- `check` - Check if content is duplicate
+- `related` - Find related posts
+
+### duplicate check
+
+Check content before publishing.
+
+```bash
+praisonaiwp duplicate check [OPTIONS] CONTENT
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--threshold` | float | 0.7 | Similarity threshold (0-1) |
+| `--duplicate-threshold` | float | 0.95 | Definite duplicate threshold |
+| `--type` | string | post | Post type to search |
+| `--category` | string | - | Category filter |
+| `--count` | int | 5 | Number of results |
+| `--file` | path | - | Read from file |
+| `--title-only` | flag | - | Check titles only |
+| `--json` | flag | - | JSON output |
+| `--verbose` | flag | - | Detailed logging |
+
+**Examples:**
+
+```bash
+# Check by title
+praisonaiwp duplicate check "PraisonAI Tutorial Guide"
+
+# Stricter threshold
+praisonaiwp duplicate check "Article" --threshold 0.9
+
+# JSON output
+praisonaiwp duplicate check "Title" --json
+```
+
+### duplicate related
+
+Find posts related to an existing post.
+
+```bash
+praisonaiwp duplicate related [OPTIONS] POST_ID
+```
+
+| Option | Type | Default | Description |
+|--------|------|---------|-------------|
+| `--count` | int | 5 | Number of related posts |
+| `--threshold` | float | 0.3 | Minimum similarity |
+| `--json` | flag | - | JSON output |
+
+**Examples:**
+
+```bash
+praisonaiwp duplicate related 49287
+praisonaiwp duplicate related 49287 --count 10
+```
+
+### Architecture
+
+See [Duplicate Detection Architecture]({{ '/duplicate-detection/' | relative_url }}) for details on caching, embedding storage, and data flow.
 
 ---
 

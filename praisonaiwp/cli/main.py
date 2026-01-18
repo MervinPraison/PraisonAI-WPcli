@@ -315,6 +315,13 @@ if AI_COMMANDS_AVAILABLE:
 if MCP_COMMANDS_AVAILABLE:
     cli.add_command(mcp, name='mcp')
 
+# Register duplicate detection command (AI feature)
+try:
+    from praisonaiwp.cli.commands.duplicate import duplicate
+    cli.add_command(duplicate, name='duplicate')
+except ImportError:
+    pass  # AI dependencies not available
+
 
 if __name__ == '__main__':
     cli()

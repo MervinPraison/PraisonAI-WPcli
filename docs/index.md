@@ -17,6 +17,7 @@ PraisonAIWP is a comprehensive command-line interface for WordPress management t
 - **Smart content optimization** for SEO and readability
 - **Batch content creation** with consistent quality
 - **Integration with OpenAI** for advanced text generation
+- **Duplicate detection** with semantic similarity and persistent caching
 
 ### 🛠️ Complete WordPress Management
 - **50+ CLI commands** covering all WordPress operations

@@ -453,7 +453,20 @@ class PraisonAIWPIntegration:
     def generate_comment_response(self, content: str, tone: str, length: str, include_question: bool) -> Dict: return {}
     def analyze_post_comments(self, comments: List) -> Dict: return {}
     def find_best_comments(self, sentiment: str = None, min_score: float = None, limit: int = 20) -> Dict: return {}
-    def find_related_posts(self, post: Dict, count: int, similarity_threshold: float, exclude_same_category: bool) -> Dict: return {}
+    def find_related_posts(self, post: Dict, count: int, similarity_threshold: float, exclude_same_category: bool) -> Dict:
+        """Find posts related to the given post using semantic similarity."""
+        from praisonaiwp.ai.duplicate_detector import DuplicateDetector
+        detector = DuplicateDetector(
+            wp_client=self.wp_client,
+            threshold=similarity_threshold,
+            verbose=self.config.get('verbose', 0)
+        )
+        detector.index_posts()
+        return detector.find_related_posts(
+            post=post,
+            count=count,
+            similarity_threshold=similarity_threshold
+        )
     def suggest_internal_links(self, post: Dict, max_links: int, min_relevance: float, anchor_text_style: str) -> Dict: return {}
     def cluster_content(self, category: str = None, tags: List[str] = None, min_cluster_size: int = 3) -> Dict: return {}
     def generate_content_recommendations(self, category: str = None, timeframe: str = 'month') -> Dict: return {}
