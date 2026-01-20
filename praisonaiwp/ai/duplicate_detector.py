@@ -3,15 +3,91 @@ Duplicate Content Detector for WordPress
 Uses semantic similarity via embeddings to detect duplicate/similar content.
 Includes persistent caching to avoid re-indexing on every search.
 """
+import asyncio
 import hashlib
 import json
 import logging
+import time
 from concurrent.futures import ThreadPoolExecutor, as_completed
 from dataclasses import dataclass, field
+from functools import wraps
 from pathlib import Path
-from typing import Any, Dict, List, Optional, Tuple
+from typing import Any, Callable, Dict, List, Optional, Tuple
 
 logger = logging.getLogger(__name__)
+
+
+# Profiling utilities
+_PROFILING_ENABLED = False
+_PROFILE_DATA: Dict[str, List[float]] = {}
+
+
+def enable_profiling(enabled: bool = True):
+    """Enable or disable profiling."""
+    global _PROFILING_ENABLED
+    _PROFILING_ENABLED = enabled
+
+
+def get_profile_data() -> Dict[str, Dict[str, float]]:
+    """Get profiling statistics."""
+    stats = {}
+    for name, times in _PROFILE_DATA.items():
+        if times:
+            stats[name] = {
+                "count": len(times),
+                "total": sum(times),
+                "avg": sum(times) / len(times),
+                "min": min(times),
+                "max": max(times),
+            }
+    return stats
+
+
+def clear_profile_data():
+    """Clear profiling data."""
+    global _PROFILE_DATA
+    _PROFILE_DATA = {}
+
+
+def profile(name: str = None):
+    """Decorator to profile function execution time."""
+    def decorator(func: Callable):
+        func_name = name or func.__name__
+        
+        @wraps(func)
+        def wrapper(*args, **kwargs):
+            if not _PROFILING_ENABLED:
+                return func(*args, **kwargs)
+            
+            start = time.perf_counter()
+            try:
+                return func(*args, **kwargs)
+            finally:
+                elapsed = time.perf_counter() - start
+                if func_name not in _PROFILE_DATA:
+                    _PROFILE_DATA[func_name] = []
+                _PROFILE_DATA[func_name].append(elapsed)
+                logger.debug(f"[PROFILE] {func_name}: {elapsed:.4f}s")
+        
+        @wraps(func)
+        async def async_wrapper(*args, **kwargs):
+            if not _PROFILING_ENABLED:
+                return await func(*args, **kwargs)
+            
+            start = time.perf_counter()
+            try:
+                return await func(*args, **kwargs)
+            finally:
+                elapsed = time.perf_counter() - start
+                if func_name not in _PROFILE_DATA:
+                    _PROFILE_DATA[func_name] = []
+                _PROFILE_DATA[func_name].append(elapsed)
+                logger.debug(f"[PROFILE] {func_name}: {elapsed:.4f}s")
+        
+        if asyncio.iscoroutinefunction(func):
+            return async_wrapper
+        return wrapper
+    return decorator
 
 # Cache directory
 CACHE_DIR = Path.home() / ".praisonaiwp" / "cache"
@@ -61,6 +137,7 @@ class DuplicateCheckResponse:
 
 # Singleton vector tool instance
 _VECTOR_TOOL_INSTANCE = None
+_QDRANT_CLIENT = None
 
 def _get_vector_tool():
     """Lazy import SQLiteVectorTool from praisonai_tools (singleton)."""
@@ -74,6 +151,169 @@ def _get_vector_tool():
     except ImportError:
         logger.warning("praisonai_tools not installed, falling back to local cache")
         return None
+
+
+def _get_qdrant_client(url: str = "http://localhost:6333"):
+    """Get Qdrant client (singleton, lazy import)."""
+    global _QDRANT_CLIENT
+    if _QDRANT_CLIENT is not None:
+        return _QDRANT_CLIENT
+    try:
+        from qdrant_client import QdrantClient
+        _QDRANT_CLIENT = QdrantClient(url=url)
+        # Test connection
+        _QDRANT_CLIENT.get_collections()
+        logger.info(f"Connected to Qdrant at {url}")
+        return _QDRANT_CLIENT
+    except ImportError:
+        logger.debug("qdrant-client not installed")
+        return None
+    except Exception as e:
+        logger.debug(f"Qdrant not available: {e}")
+        return None
+
+
+class QdrantVectorStore:
+    """
+    Qdrant vector store for high-performance similarity search.
+    Optional - falls back to SQLite if Qdrant is not available.
+    """
+    
+    COLLECTION_NAME = "wp_posts"
+    VECTOR_SIZE = 1536  # OpenAI text-embedding-3-small
+    
+    def __init__(self, url: str = "http://localhost:6333"):
+        self.url = url
+        self.client = _get_qdrant_client(url)
+        if self.client:
+            self._ensure_collection()
+    
+    def _ensure_collection(self):
+        """Create collection if it doesn't exist."""
+        try:
+            from qdrant_client.models import Distance, VectorParams
+            collections = [c.name for c in self.client.get_collections().collections]
+            if self.COLLECTION_NAME not in collections:
+                self.client.create_collection(
+                    collection_name=self.COLLECTION_NAME,
+                    vectors_config=VectorParams(size=self.VECTOR_SIZE, distance=Distance.COSINE)
+                )
+                logger.info(f"Created Qdrant collection: {self.COLLECTION_NAME}")
+        except Exception as e:
+            logger.error(f"Failed to create Qdrant collection: {e}")
+    
+    @property
+    def available(self) -> bool:
+        return self.client is not None
+    
+    def add(self, post_id: int, title: str, url: str, content_hash: str, embedding: List[float]):
+        """Add a single embedding to Qdrant."""
+        if not self.client:
+            return
+        try:
+            from qdrant_client.models import PointStruct
+            self.client.upsert(
+                collection_name=self.COLLECTION_NAME,
+                points=[PointStruct(
+                    id=post_id,
+                    vector=embedding,
+                    payload={"title": title, "url": url, "content_hash": content_hash}
+                )]
+            )
+        except Exception as e:
+            logger.error(f"Qdrant add error: {e}")
+    
+    def add_batch(self, items: List[Tuple[int, str, str, str, List[float]]]):
+        """Add multiple embeddings to Qdrant in batch."""
+        if not self.client or not items:
+            return
+        try:
+            from qdrant_client.models import PointStruct
+            points = [
+                PointStruct(
+                    id=post_id,
+                    vector=embedding,
+                    payload={"title": title, "url": url, "content_hash": content_hash}
+                )
+                for post_id, title, url, content_hash, embedding in items
+            ]
+            self.client.upsert(collection_name=self.COLLECTION_NAME, points=points)
+            logger.debug(f"Qdrant batch upsert: {len(points)} points")
+        except Exception as e:
+            logger.error(f"Qdrant batch add error: {e}")
+    
+    def get_all(self) -> List[Tuple[int, str, str, List[float]]]:
+        """Get all embeddings from Qdrant."""
+        if not self.client:
+            return []
+        try:
+            results = []
+            offset = None
+            while True:
+                response = self.client.scroll(
+                    collection_name=self.COLLECTION_NAME,
+                    limit=1000,
+                    offset=offset,
+                    with_vectors=True,
+                    with_payload=True
+                )
+                points, offset = response
+                if not points:
+                    break
+                for point in points:
+                    results.append((
+                        point.id,
+                        point.payload.get("title", ""),
+                        point.payload.get("url", ""),
+                        point.vector
+                    ))
+                if offset is None:
+                    break
+            return results
+        except Exception as e:
+            logger.error(f"Qdrant get_all error: {e}")
+            return []
+    
+    def count(self) -> int:
+        """Get count of embeddings in Qdrant."""
+        if not self.client:
+            return 0
+        try:
+            info = self.client.get_collection(self.COLLECTION_NAME)
+            return info.points_count
+        except Exception as e:
+            logger.debug(f"Qdrant count error: {e}")
+            return 0
+    
+    def clear(self):
+        """Clear all embeddings from Qdrant."""
+        if not self.client:
+            return
+        try:
+            self.client.delete_collection(self.COLLECTION_NAME)
+            self._ensure_collection()
+            logger.info("Qdrant collection cleared")
+        except Exception as e:
+            logger.error(f"Qdrant clear error: {e}")
+    
+    def search(self, embedding: List[float], limit: int = 10) -> List[Tuple[int, str, str, float]]:
+        """Search for similar embeddings."""
+        if not self.client:
+            return []
+        try:
+            results = self.client.search(
+                collection_name=self.COLLECTION_NAME,
+                query_vector=embedding,
+                limit=limit,
+                with_payload=True
+            )
+            return [
+                (r.id, r.payload.get("title", ""), r.payload.get("url", ""), r.score)
+                for r in results
+            ]
+        except Exception as e:
+            logger.error(f"Qdrant search error: {e}")
+            return []
 
 
 class EmbeddingCache:
@@ -232,13 +472,66 @@ class EmbeddingCache:
 
 def cosine_similarity(a: List[float], b: List[float]) -> float:
     """Compute cosine similarity between two vectors."""
-    import math
-    dot = sum(x * y for x, y in zip(a, b))
-    norm_a = math.sqrt(sum(x * x for x in a))
-    norm_b = math.sqrt(sum(x * x for x in b))
-    if norm_a == 0 or norm_b == 0:
-        return 0.0
-    return dot / (norm_a * norm_b)
+    try:
+        import numpy as np
+        a_arr = np.array(a)
+        b_arr = np.array(b)
+        dot = np.dot(a_arr, b_arr)
+        norm_a = np.linalg.norm(a_arr)
+        norm_b = np.linalg.norm(b_arr)
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return float(dot / (norm_a * norm_b))
+    except ImportError:
+        # Fallback to pure Python
+        import math
+        dot = sum(x * y for x, y in zip(a, b))
+        norm_a = math.sqrt(sum(x * x for x in a))
+        norm_b = math.sqrt(sum(x * x for x in b))
+        if norm_a == 0 or norm_b == 0:
+            return 0.0
+        return dot / (norm_a * norm_b)
+
+
+def cosine_similarity_batch(query: List[float], embeddings: List[List[float]]) -> List[float]:
+    """
+    Compute cosine similarity between query and multiple embeddings using numpy.
+    
+    This is MUCH faster than computing one-by-one for large datasets.
+    
+    Args:
+        query: Query embedding vector
+        embeddings: List of embedding vectors to compare against
+        
+    Returns:
+        List of similarity scores
+    """
+    if not embeddings:
+        return []
+    
+    try:
+        import numpy as np
+        query_arr = np.array(query)
+        emb_arr = np.array(embeddings)
+        
+        # Normalize query
+        query_norm = np.linalg.norm(query_arr)
+        if query_norm == 0:
+            return [0.0] * len(embeddings)
+        query_normalized = query_arr / query_norm
+        
+        # Normalize all embeddings at once
+        emb_norms = np.linalg.norm(emb_arr, axis=1, keepdims=True)
+        # Avoid division by zero
+        emb_norms = np.where(emb_norms == 0, 1, emb_norms)
+        emb_normalized = emb_arr / emb_norms
+        
+        # Compute all similarities at once via matrix multiplication
+        similarities = np.dot(emb_normalized, query_normalized)
+        return similarities.tolist()
+    except ImportError:
+        # Fallback to sequential computation
+        return [cosine_similarity(query, emb) for emb in embeddings]
 
 
 class DuplicateDetector:
@@ -255,6 +548,8 @@ class DuplicateDetector:
         duplicate_threshold: float = 0.95,
         embedding_model: str = "text-embedding-3-small",
         use_cache: bool = True,
+        use_qdrant: bool = False,
+        qdrant_url: str = "http://localhost:6333",
         verbose: int = 0
     ):
         """
@@ -266,6 +561,8 @@ class DuplicateDetector:
             duplicate_threshold: Similarity threshold to flag as duplicate (0-1)
             embedding_model: Model to use for embeddings
             use_cache: Whether to use persistent cache
+            use_qdrant: Use Qdrant vector store (optional, falls back to SQLite)
+            qdrant_url: Qdrant server URL
             verbose: Verbosity level
         """
         self.wp_client = wp_client
@@ -273,9 +570,20 @@ class DuplicateDetector:
         self.duplicate_threshold = duplicate_threshold
         self.embedding_model = embedding_model
         self.use_cache = use_cache
+        self.use_qdrant = use_qdrant
         self.verbose = verbose
         
-        # Persistent cache
+        # Qdrant vector store (optional, for high-performance search)
+        self.qdrant = None
+        if use_qdrant:
+            self.qdrant = QdrantVectorStore(url=qdrant_url)
+            if self.qdrant.available:
+                logger.info("Using Qdrant vector store")
+            else:
+                logger.warning("Qdrant not available, falling back to SQLite cache")
+                self.qdrant = None
+        
+        # Persistent cache (SQLite fallback)
         self.cache = EmbeddingCache() if use_cache else None
         
         # In-memory embeddings for current session
@@ -299,6 +607,7 @@ class DuplicateDetector:
             logger.error(f"Embedding error: {e}")
             raise
     
+    @profile("embeddings_batch")
     def _get_embeddings_batch(self, texts: List[str]) -> List[List[float]]:
         """
         Get embeddings for multiple texts in a single API call (batch).
@@ -327,6 +636,121 @@ class DuplicateDetector:
             logger.error(f"Batch embedding error: {e}")
             raise
     
+    async def _get_embeddings_batch_async(self, texts: List[str]) -> List[List[float]]:
+        """
+        Get embeddings for multiple texts asynchronously using litellm.aembedding().
+        
+        This is faster than sync batch for large datasets as it doesn't block.
+        
+        Args:
+            texts: List of texts to embed
+            
+        Returns:
+            List of embedding vectors
+        """
+        if not texts:
+            return []
+        
+        try:
+            # Try litellm async embedding first (preferred)
+            from litellm import aembedding
+            result = await aembedding(model=self.embedding_model, input=texts)
+            # litellm returns EmbeddingResponse with .data list
+            if hasattr(result, 'data'):
+                return [item.embedding for item in result.data]
+            return result
+        except ImportError:
+            # Fallback to sync in thread pool
+            logger.debug("litellm not available, falling back to sync embedding")
+            loop = asyncio.get_event_loop()
+            return await loop.run_in_executor(None, self._get_embeddings_batch, texts)
+        except Exception as e:
+            logger.error(f"Async batch embedding error: {e}")
+            raise
+    
+    async def _index_posts_async(
+        self, 
+        posts: List[Dict], 
+        batch_size: int = 50,
+        max_concurrent: int = 10
+    ) -> int:
+        """
+        Index posts using async embeddings for maximum throughput.
+        
+        Args:
+            posts: List of post dicts with post_id, title, url, text
+            batch_size: Posts per batch for embedding API
+            max_concurrent: Maximum concurrent API calls
+            
+        Returns:
+            Number of posts indexed
+        """
+        start_time = time.perf_counter()
+        
+        # Split into batches
+        batches = [posts[i:i + batch_size] for i in range(0, len(posts), batch_size)]
+        logger.info(f"[ASYNC] Processing {len(posts)} posts in {len(batches)} batches...")
+        
+        if self.verbose:
+            print(f"[ASYNC] Processing {len(posts)} posts in {len(batches)} batches...")
+        
+        results = []
+        errors = 0
+        semaphore = asyncio.Semaphore(max_concurrent)
+        
+        async def process_batch(batch_idx: int, batch: List[Dict]) -> List[Tuple]:
+            async with semaphore:
+                texts = [p["text"] for p in batch]
+                try:
+                    embeddings = await self._get_embeddings_batch_async(texts)
+                    batch_results = []
+                    for i, post in enumerate(batch):
+                        if i < len(embeddings):
+                            content_hash = self._content_hash(post["text"])
+                            batch_results.append((
+                                post["post_id"],
+                                post["title"],
+                                post["url"],
+                                content_hash,
+                                embeddings[i]
+                            ))
+                    return batch_results
+                except Exception as e:
+                    logger.error(f"Async batch {batch_idx} failed: {e}")
+                    return []
+        
+        # Process all batches concurrently
+        tasks = [process_batch(i, batch) for i, batch in enumerate(batches)]
+        batch_results_list = await asyncio.gather(*tasks, return_exceptions=True)
+        
+        completed = 0
+        for batch_result in batch_results_list:
+            if isinstance(batch_result, Exception):
+                errors += 1
+                logger.error(f"Batch failed with exception: {batch_result}")
+            else:
+                results.extend(batch_result)
+                completed += 1
+                if self.verbose and completed % 5 == 0:
+                    print(f"[ASYNC] Completed {completed}/{len(batches)} batches | Indexed: {len(results)}")
+        
+        # Store results in memory
+        for post_id, title, url, content_hash, embedding in results:
+            self._embeddings[post_id] = (title, url, embedding)
+        
+        # Batch write to Qdrant (if available) and SQLite cache
+        if self.qdrant and self.qdrant.available and results:
+            self.qdrant.add_batch(results)
+        if self.cache and results:
+            self.cache.set_batch(results)
+        
+        elapsed = time.perf_counter() - start_time
+        logger.info(f"[ASYNC] Indexing completed: {len(results)} posts in {elapsed:.1f}s ({errors} errors)")
+        if self.verbose:
+            print(f"[ASYNC] Indexed {len(results)} posts in {elapsed:.1f}s")
+        
+        return len(results)
+    
     def _content_hash(self, text: str) -> str:
         """Generate hash for content."""
         return hashlib.md5(text.encode()).hexdigest()
@@ -349,6 +773,7 @@ class DuplicateDetector:
         content = str(content)[:1000] if content else ""
         return f"{title}\n\n{content}"
     
+    @profile("index_posts")
     def index_posts(
         self,
         post_type: str = "post",
@@ -357,7 +782,8 @@ class DuplicateDetector:
         force: bool = False,
         parallel: bool = True,
         max_workers: int = 25,
-        batch_size: int = 50
+        batch_size: int = 50,
+        use_async: bool = False
     ) -> int:
         """
         Index all posts for similarity search.
@@ -371,21 +797,30 @@ class DuplicateDetector:
             parallel: Use parallel processing for faster indexing (default: True)
             max_workers: Number of parallel workers (default: 25)
             batch_size: Number of posts per batch for embedding API (default: 50)
+            use_async: Use async embeddings via litellm.aembedding() (default: False)
             
         Returns:
             Number of posts indexed (new + from cache)
         """
-        # Load from cache first
-        if self.cache and not force:
+        # Load from Qdrant first (if available), then SQLite cache
+        if self.qdrant and self.qdrant.available and not force:
+            qdrant_count = self.qdrant.count()
+            if qdrant_count > 0:
+                logger.info(f"Loading {qdrant_count} embeddings from Qdrant...")
+                for post_id, title, url, embedding in self.qdrant.get_all():
+                    self._embeddings[post_id] = (title, url, embedding)
+                self._indexed = True
+                if self.verbose:
+                    print(f"Loaded {qdrant_count} embeddings from Qdrant")
+        elif self.cache and not force:
             cached_count = self.cache.count()
             if cached_count > 0:
-                logger.info(f"Loading {cached_count} embeddings from cache...")
+                logger.info(f"Loading {cached_count} embeddings from SQLite cache...")
                 for post_id, title, url, embedding in self.cache.get_all():
                     self._embeddings[post_id] = (title, url, embedding)
                 self._indexed = True
                 if self.verbose:
                     print(f"Loaded {cached_count} cached embeddings")
-                # Still fetch posts to check for new ones
         
         logger.info(f"Fetching {post_type}s with status={post_status}...")
         
@@ -419,9 +854,24 @@ class DuplicateDetector:
             self._indexed = True
             return len(self._embeddings)
         
-        logger.info(f"Indexing {len(new_posts)} new posts (parallel={parallel}, workers={max_workers}, batch={batch_size})...")
+        logger.info(f"Indexing {len(new_posts)} new posts (parallel={parallel}, async={use_async}, workers={max_workers}, batch={batch_size})...")
         
-        if parallel:
+        if use_async:
+            # Use async embeddings for maximum throughput
+            try:
+                loop = asyncio.get_event_loop()
+                if loop.is_running():
+                    # If already in async context, create task
+                    import concurrent.futures
+                    with concurrent.futures.ThreadPoolExecutor() as pool:
+                        future = pool.submit(asyncio.run, self._index_posts_async(new_posts, batch_size, max_workers))
+                        new_indexed = future.result()
+                else:
+                    new_indexed = loop.run_until_complete(self._index_posts_async(new_posts, batch_size, max_workers))
+            except RuntimeError:
+                # No event loop, create one
+                new_indexed = asyncio.run(self._index_posts_async(new_posts, batch_size, max_workers))
+        elif parallel:
             new_indexed = self._index_posts_parallel(new_posts, max_workers, batch_size)
         else:
             new_indexed = self._index_posts_sequential(new_posts)
@@ -517,14 +967,19 @@ class DuplicateDetector:
             futures = {executor.submit(process_batch, batch): i for i, batch in enumerate(batches)}
             
             completed = 0
+            total_indexed = 0
             for future in as_completed(futures):
                 batch_idx = futures[future]
                 try:
                     batch_results = future.result()
                     results.extend(batch_results)
                     completed += 1
-                    if self.verbose and completed % 5 == 0:
-                        print(f"Completed {completed}/{len(batches)} batches...")
+                    total_indexed += len(batch_results)
+                    pending = len(posts) - total_indexed
+                    # Always log progress
+                    logger.info(f"[INDEXING] Batch {completed}/{len(batches)} done | Indexed: {total_indexed} | Pending: {pending}")
+                    if self.verbose:
+                        print(f"[INDEXING] Batch {completed}/{len(batches)} | Indexed: {total_indexed}/{len(posts)} | Pending: {pending}")
                 except Exception as e:
                     logger.error(f"Batch {batch_idx} failed: {e}")
                     errors += 1
@@ -533,7 +988,9 @@ class DuplicateDetector:
         for post_id, title, url, content_hash, embedding in results:
             self._embeddings[post_id] = (title, url, embedding)
         
-        # Batch write to cache
+        # Batch write to Qdrant (if available) and SQLite cache
+        if self.qdrant and self.qdrant.available and results:
+            self.qdrant.add_batch(results)
         if self.cache and results:
             self.cache.set_batch(results)
         
@@ -544,6 +1001,7 @@ class DuplicateDetector:
         
         return len(results)
     
+    @profile("check_duplicate")
     def check_duplicate(
         self,
         content: str,
@@ -553,23 +1011,47 @@ class DuplicateDetector:
     ) -> DuplicateCheckResponse:
         """
         Check if content is a duplicate of existing posts.
+        
+        Uses numpy-optimized batch cosine similarity for fast comparison.
         """
+        start_time = time.perf_counter()
+        
         if not self._indexed:
+            logger.info("Auto-indexing posts for duplicate check...")
             self.index_posts()
         
         query = f"{title}\n\n{content}" if title else content
-        query_embedding = self._get_embedding(query)
         
-        # Compute similarities
-        similarities = []
+        # Get query embedding
+        embed_start = time.perf_counter()
+        query_embedding = self._get_embedding(query)
+        embed_time = time.perf_counter() - embed_start
+        logger.debug(f"[TIMING] Query embedding: {embed_time:.3f}s")
+        
+        # Prepare data for batch similarity computation
+        post_ids = []
+        post_titles = []
+        post_urls = []
+        embeddings = []
+        
         for post_id, (post_title, url, embedding) in self._embeddings.items():
             if exclude_post_id and post_id == exclude_post_id:
                 continue
-            
-            score = cosine_similarity(query_embedding, embedding)
-            similarities.append((post_id, post_title, url, score))
+            post_ids.append(post_id)
+            post_titles.append(post_title)
+            post_urls.append(url)
+            embeddings.append(embedding)
         
-        # Sort by similarity
+        # Compute all similarities at once using numpy (FAST!)
+        sim_start = time.perf_counter()
+        scores = cosine_similarity_batch(query_embedding, embeddings)
+        sim_time = time.perf_counter() - sim_start
+        logger.debug(f"[TIMING] Batch similarity ({len(embeddings)} posts): {sim_time:.4f}s")
+        
+        # Combine results
+        similarities = list(zip(post_ids, post_titles, post_urls, scores))
+        
+        # Sort by similarity (descending)
         similarities.sort(key=lambda x: x[3], reverse=True)
         
         # Build response
@@ -595,6 +1077,9 @@ class DuplicateDetector:
                 url=url,
                 status=status
             ))
+        
+        total_time = time.perf_counter() - start_time
+        logger.debug(f"[TIMING] Total check_duplicate: {total_time:.3f}s")
         
         return DuplicateCheckResponse(
             query=query[:100] + "..." if len(query) > 100 else query,
