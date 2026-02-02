@@ -80,12 +80,14 @@ markdown_extensions:
 nav:
   - Home: index.md
   - Getting Started:
+    - Overview: getting-started/index.md
     - Installation: getting-started/installation.md
     - Quick Start: getting-started/quickstart.md
     - Configuration: getting-started/configuration.md
     - Kubernetes Setup: getting-started/kubernetes.md
   - Commands:
     - Overview: commands/index.md
+    - Doctor: commands/doctor.md
     - Content Management:
       - Create Posts: commands/create.md
       - Update Posts: commands/update.md

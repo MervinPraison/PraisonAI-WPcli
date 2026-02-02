@@ -42,6 +42,7 @@ from praisonaiwp.cli.commands.transient import transient_command
 from praisonaiwp.cli.commands.update import update_command
 from praisonaiwp.cli.commands.user import user_command
 from praisonaiwp.cli.commands.widget import widget_command
+from praisonaiwp.cli.commands.doctor import doctor
 
 # New WP-CLI commands
 from praisonaiwp.cli.commands.ability import ability
@@ -116,6 +117,13 @@ def cli(ctx, json_output):
     PraisonAIWP - AI-powered WordPress content management
 
     Simple, powerful WordPress automation via WP-CLI over SSH.
+
+    \b
+    QUICK START:
+    ------------
+    Config file: ~/.praisonaiwp/config.yaml
+    Check setup: praisonaiwp doctor
+    List posts:  praisonaiwp list --server default
 
     \b
     CONTENT FORMAT:
@@ -314,6 +322,9 @@ if AI_COMMANDS_AVAILABLE:
 # Register MCP commands if available
 if MCP_COMMANDS_AVAILABLE:
     cli.add_command(mcp, name='mcp')
+
+# Register doctor command
+cli.add_command(doctor, name='doctor')
 
 # Register duplicate detection command (AI feature)
 try:

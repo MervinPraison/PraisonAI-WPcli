@@ -68,11 +68,12 @@ def _parse_category_input(category_str, category_id_str, wp):
 @click.option('--tags', help='Update tags (comma-separated)')
 @click.option('--meta', help='Update post meta in JSON format')
 @click.option('--comment-status', help='Update comment status (open, closed)')
+@click.option('--append', 'append_content', help='Append content to end of post (HTML or blocks)')
 @click.option('--no-block-conversion', is_flag=True, help='Disable automatic HTML to Gutenberg blocks conversion')
 @click.option('--server', default=None, help='Server name from config')
 def update_command(post_id, find_text, replace_text, line, nth, preview, category, category_id,
                    post_content, post_title, post_status, post_excerpt, post_author, post_date,
-                   tags, meta, comment_status, no_block_conversion, server):
+                   tags, meta, comment_status, append_content, no_block_conversion, server):
     """
     Update WordPress post content
 
@@ -109,6 +110,11 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
         <!-- wp:code --><pre class="wp-block-code"><code>code</code></pre><!-- /wp:code -->
         <!-- wp:table --><figure class="wp-block-table"><table>...</table></figure><!-- /wp:table -->
         <!-- wp:separator --><hr class="wp-block-separator has-alpha-channel-opacity"/><!-- /wp:separator -->
+
+    \b
+    APPEND MODE:
+        # Append new content to end of existing post
+        praisonaiwp update 123 --append "<h2>New Section</h2><p>New content</p>"
     """
 
     try:
@@ -117,7 +123,7 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
         server_config = config.get_server(server)
 
         # Validate inputs - need at least one update operation
-        if not (find_text and replace_text) and not (category or category_id) and not any([
+        if not (find_text and replace_text) and not (category or category_id) and not append_content and not any([
             post_content, post_title, post_status, post_excerpt, post_author,
             post_date, tags, meta, comment_status
         ]):
@@ -197,6 +203,24 @@ def update_command(post_id, find_text, replace_text, line, nth, preview, categor
             if update_fields:
                 wp.update_post(post_id, **update_fields)
                 console.print("[green]✓ Post fields updated successfully[/green]")
+
+            # Handle append mode
+            if append_content:
+                console.print("[cyan]Appending content to post...[/cyan]")
+                current_content = wp.get_post(post_id, field='post_content')
+                
+                # Auto-convert HTML to blocks (unless disabled)
+                if not no_block_conversion and not has_blocks(append_content):
+                    console.print("[cyan]Auto-converting appended HTML to Gutenberg blocks...[/cyan]")
+                    append_content = html_to_blocks(append_content)
+                    console.print("[green]✓ Content converted to blocks[/green]")
+                
+                # Append separator and new content
+                new_content = current_content + "\n\n" + append_content
+                wp.update_post(post_id, post_content=new_content)
+                console.print("[green]✓ Content appended successfully[/green]")
+                console.print(f"Title: {post_data.get('post_title', 'N/A')}\n")
+                return
 
             # Handle content update if find/replace provided
             if find_text and replace_text:

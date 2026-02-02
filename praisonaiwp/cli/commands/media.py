@@ -9,6 +9,7 @@ from rich.table import Table
 
 from praisonaiwp.core.config import Config
 from praisonaiwp.core.ssh_manager import SSHManager
+from praisonaiwp.core.transport import get_transport
 from praisonaiwp.core.wp_client import WPClient
 from praisonaiwp.utils.logger import get_logger
 
@@ -36,8 +37,11 @@ def upload_media(file_path, post_id, title, caption, alt, desc, server):
 
     Examples:
 
-        # Upload a local file (auto-uploads via SFTP)
+        # Upload a local file (auto-uploads via SFTP or kubectl cp)
         praisonaiwp media /path/to/image.jpg
+
+        # Upload to Kubernetes-based WordPress
+        praisonaiwp media /path/to/image.jpg --server praison-ai
 
         # Upload and attach to post
         praisonaiwp media /path/to/image.jpg --post-id 123
@@ -52,18 +56,17 @@ def upload_media(file_path, post_id, title, caption, alt, desc, server):
         config = Config()
         server_config = config.get_server(server)
 
-        with SSHManager(
-            server_config['hostname'],
-            server_config['username'],
-            server_config.get('key_filename'),
-            server_config.get('port', 22)
-        ) as ssh:
+        # Use transport factory to support both SSH and Kubernetes
+        transport = get_transport(config, server)
+        transport.connect()
 
+        try:
             wp = WPClient(
-                ssh,
+                transport,
                 server_config['wp_path'],
                 server_config.get('php_bin', 'php'),
-                server_config.get('wp_cli', '/usr/local/bin/wp')
+                server_config.get('wp_cli', '/usr/local/bin/wp'),
+                verify_installation=False
             )
 
             # Determine if file_path is local or URL
@@ -78,7 +81,7 @@ def upload_media(file_path, post_id, title, caption, alt, desc, server):
                 filename = os.path.basename(local_path)
                 remote_file_path = f"/tmp/{filename}"
                 console.print("[yellow]Uploading local file to server...[/yellow]")
-                ssh.upload_file(local_path, remote_file_path)
+                transport.upload_file(local_path, remote_file_path)
                 console.print(f"[green]✓ File uploaded to {remote_file_path}[/green]")
             elif is_url:
                 console.print("[yellow]Importing from URL...[/yellow]")
@@ -102,7 +105,7 @@ def upload_media(file_path, post_id, title, caption, alt, desc, server):
 
             # Clean up temp file if we uploaded it
             if is_local_file:
-                ssh.execute(f"rm -f {remote_file_path}")
+                transport.execute(f"rm -f {remote_file_path}")
                 console.print("[dim]Cleaned up temporary file[/dim]")
 
             console.print(f"\n[green]✓ Imported media with ID: {attachment_id}[/green]")
@@ -110,6 +113,9 @@ def upload_media(file_path, post_id, title, caption, alt, desc, server):
             if post_id:
                 console.print(f"Attached to post: {post_id}")
             console.print()
+
+        finally:
+            transport.close()
 
     except Exception as e:
         console.print(f"[red]Error: {e}[/red]")

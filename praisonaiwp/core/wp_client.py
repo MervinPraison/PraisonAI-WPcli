@@ -19,24 +19,32 @@ class WPClient:
         wp_path: str,
         php_bin: str = 'php',
         wp_cli: str = '/usr/local/bin/wp',
-        verify_installation: bool = True
+        verify_installation: bool = True,
+        allow_root: bool = False
     ):
         """
         Initialize WP Client
 
         Args:
-            ssh: SSH Manager instance
+            ssh: SSH Manager instance (or KubernetesManager for K8s transport)
             wp_path: WordPress installation path
             php_bin: PHP binary path (default: 'php')
             wp_cli: WP-CLI binary path (default: '/usr/local/bin/wp')
             verify_installation: Verify WP-CLI and WordPress are available (default: True)
+            allow_root: Add --allow-root flag to WP-CLI commands (default: False, auto-detected for K8s)
         """
         self.ssh = ssh
         self.wp_path = wp_path
         self.php_bin = php_bin
         self.wp_cli = wp_cli
+        
+        # Auto-detect allow_root for Kubernetes transport
+        if hasattr(ssh, '__class__') and 'Kubernetes' in ssh.__class__.__name__:
+            self.allow_root = True
+        else:
+            self.allow_root = allow_root
 
-        logger.debug(f"Initialized WPClient for {wp_path}")
+        logger.debug(f"Initialized WPClient for {wp_path} (allow_root={self.allow_root})")
 
         # Verify installation if requested
         if verify_installation:
@@ -190,6 +198,10 @@ class WPClient:
         Raises:
             WPCLIError: If command fails
         """
+        # Add --allow-root if configured (needed for Kubernetes pods running as root)
+        if self.allow_root and '--allow-root' not in command:
+            command = f"{command} --allow-root"
+        
         full_cmd = f"cd {self.wp_path} && {self.php_bin} {self.wp_cli} {command}"
 
         logger.debug(f"Executing WP-CLI: {command}")
