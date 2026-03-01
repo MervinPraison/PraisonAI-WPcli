@@ -822,32 +822,53 @@ class DuplicateDetector:
                 if self.verbose:
                     print(f"Loaded {cached_count} cached embeddings")
         
-        logger.info(f"Fetching {post_type}s with status={post_status}...")
+        logger.info(f"Fetching {post_type} posts with status={post_status}...")
         
-        filters = {"post_status": post_status, "posts_per_page": 2000}
-        if category:
-            filters["category_name"] = category
+        # Fetch in paginated batches with minimal fields for speed
+        page_size = 2000
+        all_posts = []
+        page = 1
+        while True:
+            filters_page = {
+                "post_status": post_status,
+                "posts_per_page": page_size,
+                "paged": page,
+                "fields": "ID,post_title,guid",
+            }
+            if category:
+                filters_page["category_name"] = category
+            
+            posts = self.wp_client.list_posts(post_type=post_type, **filters_page)
+            if not posts:
+                break
+            all_posts.extend(posts)
+            if self.verbose:
+                print(f"Fetched page {page}: {len(posts)} posts (total: {len(all_posts)})")
+            if len(posts) < page_size:
+                break
+            page += 1
         
-        posts = self.wp_client.list_posts(post_type=post_type, **filters)
-        
-        if not posts:
+        if not all_posts:
             logger.warning("No posts found")
             return len(self._embeddings)
         
-        # Filter to only new posts
+        if self.verbose:
+            print(f"Total posts fetched: {len(all_posts)}")
+        
+        # Filter to only new posts (use title for embedding — much faster than fetching content per-post)
         new_posts = []
-        for post in posts:
+        for post in all_posts:
             post_id = post.get("ID")
             if not post_id or post_id in self._embeddings:
                 continue
-            text = self._get_post_text(post)
-            if not text.strip():
+            title = post.get("post_title", post.get("title", ""))
+            if not title.strip():
                 continue
             new_posts.append({
                 "post_id": post_id,
-                "title": post.get("post_title", ""),
+                "title": title,
                 "url": post.get("guid", ""),
-                "text": text
+                "text": title  # Use title for embedding (fast, no per-post content fetch)
             })
         
         if not new_posts:

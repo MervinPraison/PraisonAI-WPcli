@@ -190,7 +190,8 @@ class WPCLIInstaller:
             # Step 3: Test the phar file
             logger.info("Testing WP-CLI...")
             php_cmd = php_bin or 'php'
-            stdout, stderr = self.ssh.execute(f"{php_cmd} wp-cli.phar --version")
+            allow_root = ' --allow-root' if not use_sudo else ''
+            stdout, stderr = self.ssh.execute(f"{php_cmd} wp-cli.phar --version{allow_root}")
 
             if 'WP-CLI' not in stdout:
                 raise WPCLIError(f"Downloaded WP-CLI is not working: {stderr}")
@@ -215,7 +216,7 @@ class WPCLIInstaller:
             logger.info(f"✓ WP-CLI installed to {install_path}")
 
             # Step 6: Verify installation
-            stdout, stderr = self.ssh.execute(f"{install_path} --version")
+            stdout, stderr = self.ssh.execute(f"{install_path} --version{allow_root}")
 
             if 'WP-CLI' in stdout:
                 logger.info(f"✓ Installation successful: {stdout.strip()}")

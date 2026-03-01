@@ -5,7 +5,7 @@ from rich.console import Console
 from rich.table import Table
 
 from praisonaiwp.core.config import Config
-from praisonaiwp.core.ssh_manager import SSHManager
+from praisonaiwp.core.transport import get_transport
 from praisonaiwp.core.wp_client import WPClient
 from praisonaiwp.utils.logger import get_logger
 from praisonaiwp.utils.ai_formatter import AIFormatter
@@ -49,11 +49,14 @@ def check(content, threshold, duplicate_threshold, post_type, category,
         # Check content from file
         praisonaiwp duplicate check "" --file article.md
         
+        # Check custom post type (e.g. lyrics)
+        praisonaiwp duplicate check "Unthan Naamam" --type lyrics --server mysite
+        
         # Stricter threshold
         praisonaiwp duplicate check "My Article" --threshold 0.9
         
         # JSON output for scripting
-        praisonaiwp duplicate check "Test" --json
+        praisonaiwp duplicate check "My Title" --json
     """
     # Check AI availability
     if not AI_AVAILABLE:
@@ -89,18 +92,15 @@ def check(content, threshold, duplicate_threshold, post_type, category,
             console.print(f"Content: {content[:50]}...")
             console.print(f"Threshold: {threshold}")
         
-        with SSHManager(
-            server_config['hostname'],
-            server_config['username'],
-            server_config['key_file'],
-            server_config.get('port', 22)
-        ) as ssh:
+        transport = get_transport(config, server)
+        transport.connect()
+        try:
             wp = WPClient(
-                ssh,
+                transport,
                 server_config['wp_path'],
                 server_config.get('php_bin', 'php'),
                 server_config.get('wp_cli', '/usr/local/bin/wp'),
-                verify_installation=False
+                verify_installation=True
             )
             
             # Import and create detector
@@ -114,16 +114,14 @@ def check(content, threshold, duplicate_threshold, post_type, category,
             )
             
             # Index posts
-            if verbose:
-                console.print("[cyan]Indexing posts...[/cyan]")
+            console.print(f"[cyan]Indexing '{post_type}' posts from {server or 'default'} server...[/cyan]")
             
             indexed = detector.index_posts(
                 post_type=post_type,
                 category=category
             )
             
-            if verbose:
-                console.print(f"[green]Indexed {indexed} posts[/green]")
+            console.print(f"[green]Indexed {indexed} '{post_type}' posts[/green]")
             
             # Check for duplicates
             # Split title from content if title-only mode
@@ -149,6 +147,8 @@ def check(content, threshold, duplicate_threshold, post_type, category,
                 click.echo(json.dumps(result.to_dict(), indent=2))
             else:
                 _format_check_result(result, verbose)
+        finally:
+            transport.close()
                 
     except Exception as e:
         error_msg = AIFormatter.error_response(
@@ -169,6 +169,7 @@ def _format_check_result(result, verbose: bool = False):
     console.print("[bold]🔍 Duplicate Check Results[/bold]")
     console.print("=" * 50)
     console.print(f"Query: {result.query}")
+    console.print()
     console.print(f"Threshold: {result.threshold}")
     console.print(f"Posts checked: {result.total_posts_checked}")
     console.print()
@@ -198,7 +199,7 @@ def _format_check_result(result, verbose: bool = False):
         
         console.print(f"{i}. [bold]{match.title}[/bold] (ID: {match.post_id})")
         console.print(f"   Similarity: [{status_color}]{match.similarity_score:.2f}[/{status_color}] | Status: {status_icon} {match.status.upper()}")
-        if match.url and verbose:
+        if match.url:
             console.print(f"   URL: {match.url}")
         console.print()
     
@@ -243,18 +244,15 @@ def related(post_id, count, threshold, server, json_output, verbose):
         config = Config()
         server_config = config.get_server(server)
         
-        with SSHManager(
-            server_config['hostname'],
-            server_config['username'],
-            server_config['key_file'],
-            server_config.get('port', 22)
-        ) as ssh:
+        transport = get_transport(config, server)
+        transport.connect()
+        try:
             wp = WPClient(
-                ssh,
+                transport,
                 server_config['wp_path'],
                 server_config.get('php_bin', 'php'),
                 server_config.get('wp_cli', '/usr/local/bin/wp'),
-                verify_installation=False
+                verify_installation=True
             )
             
             # Get the target post
@@ -290,6 +288,8 @@ def related(post_id, count, threshold, server, json_output, verbose):
                 click.echo(json.dumps(result, indent=2))
             else:
                 _format_related_result(post, result, verbose)
+        finally:
+            transport.close()
                 
     except Exception as e:
         error_msg = AIFormatter.error_response(
@@ -364,18 +364,15 @@ def check_batch(items, threshold, duplicate_threshold, post_type, count,
             for i, item in enumerate(items_list, 1):
                 console.print(f"  {i}. {item[:50]}...")
         
-        with SSHManager(
-            server_config['hostname'],
-            server_config['username'],
-            server_config['key_file'],
-            server_config.get('port', 22)
-        ) as ssh:
+        transport = get_transport(config, server)
+        transport.connect()
+        try:
             wp = WPClient(
-                ssh,
+                transport,
                 server_config['wp_path'],
                 server_config.get('php_bin', 'php'),
                 server_config.get('wp_cli', '/usr/local/bin/wp'),
-                verify_installation=False
+                verify_installation=True
             )
             
             from praisonaiwp.ai.duplicate_detector import DuplicateDetector
@@ -409,6 +406,8 @@ def check_batch(items, threshold, duplicate_threshold, post_type, count,
                 click.echo(json.dumps(result.to_dict(), indent=2))
             else:
                 _format_batch_result(result, items_list, verbose)
+        finally:
+            transport.close()
                 
     except Exception as e:
         error_msg = AIFormatter.error_response(

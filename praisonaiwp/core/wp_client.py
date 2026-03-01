@@ -62,14 +62,27 @@ class WPClient:
             stdout, stderr = self.ssh.execute(f"test -f {self.wp_cli} && echo 'exists' || echo 'not found'")
 
             if 'not found' in stdout:
-                raise WPCLIError(
-                    f"WP-CLI not found at {self.wp_cli}\n"
-                    f"\nInstallation instructions:\n"
-                    f"1. Download: curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar\n"
-                    f"2. Make executable: chmod +x wp-cli.phar\n"
-                    f"3. Move to path: sudo mv wp-cli.phar {self.wp_cli}\n"
-                    f"\nOr specify correct path with --wp-cli option"
-                )
+                logger.info(f"WP-CLI not found at {self.wp_cli}, attempting auto-install...")
+                try:
+                    from praisonaiwp.core.wp_installer import WPCLIInstaller
+                    installer = WPCLIInstaller(self.ssh)
+                    # For Kubernetes (root), don't use sudo
+                    use_sudo = not self.allow_root
+                    installer.install_wp_cli(
+                        install_path=self.wp_cli,
+                        use_sudo=use_sudo,
+                        php_bin=self.php_bin
+                    )
+                    logger.info(f"WP-CLI auto-installed at {self.wp_cli}")
+                except Exception as install_err:
+                    raise WPCLIError(
+                        f"WP-CLI not found at {self.wp_cli} and auto-install failed: {install_err}\n"
+                        f"\nManual installation:\n"
+                        f"1. Download: curl -O https://raw.githubusercontent.com/wp-cli/builds/gh-pages/phar/wp-cli.phar\n"
+                        f"2. Make executable: chmod +x wp-cli.phar\n"
+                        f"3. Move to path: sudo mv wp-cli.phar {self.wp_cli}\n"
+                        f"\nOr specify correct path with --wp-cli option"
+                    ) from install_err
 
             # Check if WordPress directory exists
             stdout, stderr = self.ssh.execute(f"test -d {self.wp_path} && echo 'exists' || echo 'not found'")
@@ -80,17 +93,34 @@ class WPClient:
                     f"Please verify the WordPress path is correct."
                 )
 
-            # Check if wp-config.php exists
-            stdout, stderr = self.ssh.execute(f"test -f {self.wp_path}/wp-config.php && echo 'exists' || echo 'not found'")
+            # Check if wp-config.php exists (support Bedrock and standard layouts)
+            config_found = False
+            for config_path in [
+                f"{self.wp_path}/wp-config.php",
+                f"{self.wp_path}/web/wp-config.php",  # Bedrock layout
+                f"{self.wp_path}/app/wp-config.php",   # Alternative Bedrock
+            ]:
+                stdout, stderr = self.ssh.execute(f"test -f {config_path} && echo 'exists' || echo 'not found'")
+                if 'exists' in stdout:
+                    config_found = True
+                    break
+            
+            # Also accept wp-cli.yml as valid (Bedrock uses it to configure paths)
+            if not config_found:
+                stdout, stderr = self.ssh.execute(f"test -f {self.wp_path}/wp-cli.yml && echo 'exists' || echo 'not found'")
+                if 'exists' in stdout:
+                    config_found = True
+                    logger.info(f"Found wp-cli.yml at {self.wp_path} (Bedrock-style installation)")
 
-            if 'not found' in stdout:
+            if not config_found:
                 raise WPCLIError(
                     f"wp-config.php not found in {self.wp_path}\n"
                     f"This doesn't appear to be a valid WordPress installation."
                 )
 
             # Test WP-CLI execution
-            stdout, stderr = self.ssh.execute(f"cd {self.wp_path} && {self.php_bin} {self.wp_cli} --version")
+            allow_root_flag = ' --allow-root' if self.allow_root else ''
+            stdout, stderr = self.ssh.execute(f"cd {self.wp_path} && {self.php_bin} {self.wp_cli} --version{allow_root_flag}")
 
             if stderr and ('command not found' in stderr.lower() or 'no such file' in stderr.lower()):
                 raise WPCLIError(

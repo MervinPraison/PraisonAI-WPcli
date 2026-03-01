@@ -169,38 +169,57 @@ class KubernetesManager:
         if not self._connected:
             self.connect()
 
-        pod_name = self._resolve_pod_name()
+        max_retries = 2
+        for attempt in range(max_retries + 1):
+            pod_name = self._resolve_pod_name()
+            
+            cmd = self._build_kubectl_base()
+            cmd.extend(["exec", pod_name])
+            if self.container:
+                cmd.extend(["-c", self.container])
+            cmd.extend(["--", "sh", "-c", command])
+
+            logger.debug(f"Executing: {command}")
+
+            try:
+                result = subprocess.run(
+                    cmd,
+                    capture_output=True,
+                    text=True,
+                    timeout=self.timeout * 10  # Longer timeout for actual commands
+                )
+                
+                stdout = result.stdout
+                stderr = result.stderr
+                
+                # Detect pod recycling and auto-reconnect
+                if result.returncode != 0 and stderr and 'not found' in stderr.lower():
+                    if attempt < max_retries:
+                        logger.warning(f"Pod '{pod_name}' not found, re-resolving... (attempt {attempt + 1}/{max_retries})")
+                        self._pod_name = None  # Force re-resolution
+                        continue
+                    else:
+                        raise SSHConnectionError(
+                            f"Pod not found after {max_retries} reconnection attempts. "
+                            f"The pod may have been permanently removed."
+                        )
+                
+                if result.returncode != 0 and stderr:
+                    logger.warning(f"Command returned non-zero: {stderr}")
+                
+                return stdout, stderr
+
+            except subprocess.TimeoutExpired:
+                raise SSHConnectionError(
+                    f"Command timeout: {command[:100]}..."
+                )
+            except SSHConnectionError:
+                raise
+            except Exception as e:
+                raise SSHConnectionError(f"Command execution failed: {e}")
         
-        cmd = self._build_kubectl_base()
-        cmd.extend(["exec", pod_name])
-        if self.container:
-            cmd.extend(["-c", self.container])
-        cmd.extend(["--", "sh", "-c", command])
-
-        logger.debug(f"Executing: {command}")
-
-        try:
-            result = subprocess.run(
-                cmd,
-                capture_output=True,
-                text=True,
-                timeout=self.timeout * 10  # Longer timeout for actual commands
-            )
-            
-            stdout = result.stdout
-            stderr = result.stderr
-            
-            if result.returncode != 0 and stderr:
-                logger.warning(f"Command returned non-zero: {stderr}")
-            
-            return stdout, stderr
-
-        except subprocess.TimeoutExpired:
-            raise SSHConnectionError(
-                f"Command timeout: {command[:100]}..."
-            )
-        except Exception as e:
-            raise SSHConnectionError(f"Command execution failed: {e}")
+        # Should not reach here, but safety fallback
+        raise SSHConnectionError("Max retries exceeded")
 
     def upload_file(self, local_path: str, remote_path: str) -> str:
         """
